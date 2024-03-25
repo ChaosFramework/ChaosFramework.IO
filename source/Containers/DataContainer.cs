@@ -102,7 +102,7 @@ namespace ChaosFramework.IO.Containers
                     if (custom.TryGetValue(key, out factory))
                         returnVal = new Entry(this, key, _ => factory(), monitor1, monitors);
                     else if (streamSource.TryOpenRead(key.key, out resource))
-                        returnVal = new Entry(this, key, k => _LoadFromResource(k, resource), monitor1, monitors);
+                        returnVal = new Entry(this, key, k => LoadFromStreamInternal(k, resource), monitor1, monitors);
                     else
                         return false;
 
@@ -168,20 +168,20 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
-        DataType _LoadFromResource(Key key, System.IO.Stream resource)
+        DataType LoadFromStreamInternal(Key key, System.IO.Stream resource)
         {
             if (!resource.CanRead)
                 throw new Exception("Resource stream is unreadable. It was likely closed.");
 
             resource.Position = 0;
-            DataType obj = LoadFromResource(key, resource);
+            DataType obj = LoadFromStream(key, resource);
 
             resource.Dispose();
 
             return obj;
         }
 
-        protected abstract DataType LoadFromResource(Key key, System.IO.Stream resource);
+        protected abstract DataType LoadFromStream(Key key, System.IO.Stream resource);
 
         public virtual void Dispose(string key)
             => Dispose(GenerateKey(key));
