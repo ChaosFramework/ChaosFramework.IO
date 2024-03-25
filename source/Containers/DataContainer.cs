@@ -187,10 +187,7 @@ namespace ChaosFramework.IO.Containers
             custom[key] = factory;
         }
 
-        public void RefreshContent()
-            => RefreshContent(false);
-
-        public virtual void RefreshContent(bool overrideOnly)
+        public virtual void RefreshContent()
         {
             lock (data)
             {
@@ -198,21 +195,14 @@ namespace ChaosFramework.IO.Containers
                 if (defaultGenerator != null)
                     defaultValue = defaultGenerator();
 
-                if (overrideOnly && archive != null)
-                {
-                    foreach (SysCol.KeyValuePair<Key, Entry> pair in data)
-                        if (archive.ContainsOverrideFile(pair.Key.key))
-                            pair.Value.RefreshContent();
-                }
-                else
-                    foreach (SysCol.KeyValuePair<Key, Entry> pair in data)
-                        // TODO: Is that really a good idea?
-                        //       We've literally just reassigned the default value to a potentially new instance.
-                        //       Plus: What if we're currently loading this in background and that's why it's default?
-                        //       Shouldn't we then abort the current loading process and restart it?
-                        //       Better than aborting is probably letting it finish and dispose the result.
-                        if (!ReferenceEquals(pair.Value.content, defaultValue))
-                            pair.Value.RefreshContent();
+                foreach (SysCol.KeyValuePair<Key, Entry> pair in data)
+                    // TODO: Is that really a good idea?
+                    //       We've literally just reassigned the default value to a potentially new instance.
+                    //       Plus: What if we're currently loading this in background and that's why it's default?
+                    //       Shouldn't we then abort the current loading process and restart it?
+                    //       Better than aborting is probably letting it finish and dispose the result.
+                    if (!ReferenceEquals(pair.Value.content, defaultValue))
+                        pair.Value.RefreshContent();
             }
         }
 

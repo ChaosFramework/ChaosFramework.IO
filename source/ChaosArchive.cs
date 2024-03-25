@@ -37,7 +37,6 @@ namespace ChaosFramework.IO
                   .Replace(":", "__");
 
         public readonly FileInfo archiveFile;
-        public readonly DirectoryInfo overrideDirectory;
 
         readonly SysCol.Dictionary<string, FilePos> filePos = new SysCol.Dictionary<string, FilePos>();
         readonly string[] directories;
@@ -45,18 +44,11 @@ namespace ChaosFramework.IO
 
         readonly SysCol.Dictionary<string, LinkedList<string>> cachedFileSearches = new SysCol.Dictionary<string, LinkedList<string>>();
 
-        SysCol.HashSet<string> overrideFiles, overrideDirectories;
-
         public ChaosArchive(string archivePath, bool verifyChecksum)
         {
             archiveFile = new FileInfo(archivePath);
             if (!archiveFile.Exists)
                 throw new FileNotFoundException("Archive file not found.", archivePath);
-
-            string archiveName = Path.GetFileNameWithoutExtension(archiveFile.Name);
-            overrideDirectory = new DirectoryInfo($"{archiveFile.Directory.FullName}\\{archiveName}");
-
-            UpdateOverrideFiles();
 
             string lastFile = null;
             long nextFilePos = 0, lastFilePos = 0;
@@ -121,50 +113,20 @@ namespace ChaosFramework.IO
             }
         }
 
-        public bool ContainsOverrideFile(string path) => overrideFiles.Contains(path);
-
-        public void UpdateOverrideFiles()
-        {
-            AssertAlive();
-            cachedFileSearches.Clear();
-            string[] files = overrideDirectory.Exists
-                ? Directory.GetFiles(overrideDirectory.FullName, "*", SearchOption.AllDirectories)
-                : Array<string>.empty;
-            string[] directories = overrideDirectory.Exists
-                ? Directory.GetDirectories(overrideDirectory.FullName, "*", SearchOption.AllDirectories)
-                : Array<string>.empty;
-
-            overrideFiles = new SysCol.HashSet<string>();
-            overrideDirectories = new SysCol.HashSet<string>();
-
-            for (int i = 0; i < files.Length; i++)
-                overrideFiles.Add(files[i].Substring(overrideDirectory.FullName.Length + 1).ToLower());
-            for (int i = 0; i < directories.Length; i++)
-                overrideDirectories.Add(directories[i].Substring(overrideDirectory.FullName.Length + 1).ToLower());
-        }
-
         public LinkedList<string> GetFilesCached(string filter = GlobRegex.MATCH_ALL_GLOB)
         {
             LinkedList<string> files;
             if (!cachedFileSearches.TryGetValue(filter, out files))
-                cachedFileSearches[filter] = files = GetFiles(filter, true);
+                cachedFileSearches[filter] = files = GetFiles(filter);
             return files;
         }
 
-        public LinkedList<string> GetFiles(string filter = GlobRegex.MATCH_ALL_GLOB, bool allowOverride = true)
+        public LinkedList<string> GetFiles(string filter = GlobRegex.MATCH_ALL_GLOB)
         {
             AssertAlive();
             Regex regex = new Regex(GlobRegex.ConvertGlobToRegex(filter), RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
             LinkedList<string> files = new LinkedList<string>();
-            if (allowOverride)
-                foreach (string file in overrideFiles)
-                {
-                    string relative = Normalization.NormalizeRelative(file);
-                    if (regex.IsMatch(relative))
-                        files.Add(relative);
-                }
-
             foreach (string file in filePos.Keys)
                 if (regex.IsMatch(file))
                     files.AddUnique(file);
@@ -172,14 +134,14 @@ namespace ChaosFramework.IO
             return files;
         }
 
-        public LinkedList<string> GetFiles(string[] fileExtensions, string filter = GlobRegex.MATCH_ALL_GLOB, bool allowOverride = true)
+        public LinkedList<string> GetFiles(string[] fileExtensions, string filter = GlobRegex.MATCH_ALL_GLOB)
         {
             AssertAlive();
             for (int i = 0; i < fileExtensions.Length; i++)
                 fileExtensions[i] = fileExtensions[i].ToLower();
 
             LinkedList<string> files = new LinkedList<string>();
-            foreach (string file in GetFiles(filter, allowOverride))
+            foreach (string file in GetFiles(filter))
                 foreach (string ext in fileExtensions)
                     if (file.EndsWith(ext))
                     {
@@ -190,21 +152,11 @@ namespace ChaosFramework.IO
             return files;
         }
 
-        public SysCol.IEnumerable<string> EnumerateFiles(string filter = GlobRegex.MATCH_ALL_GLOB, bool allowOverride = true)
+        public SysCol.IEnumerable<string> EnumerateFiles(string filter = GlobRegex.MATCH_ALL_GLOB)
         {
             AssertAlive();
             Regex regex = new Regex(GlobRegex.ConvertGlobToRegex(filter), RegexOptions.Compiled | RegexOptions.IgnoreCase);
             SysCol.HashSet<string> files = new SysCol.HashSet<string>();
-            if (allowOverride)
-                foreach (string file in overrideFiles)
-                {
-                    string relative = Normalization.NormalizeRelative(file);
-                    if (regex.IsMatch(relative))
-                    {
-                        files.Add(relative);
-                        yield return relative;
-                    }
-                }
 
             foreach (string file in filePos.Keys)
                 if (regex.IsMatch(file))
@@ -214,8 +166,7 @@ namespace ChaosFramework.IO
 
         public SysCol.IEnumerable<string> EnumerateFiles(
             string[] fileExtensions,
-            string filter = GlobRegex.MATCH_ALL_GLOB,
-            bool allowOverride = true
+            string filter = GlobRegex.MATCH_ALL_GLOB
             )
         {
             AssertAlive();
@@ -223,14 +174,14 @@ namespace ChaosFramework.IO
                 fileExtensions[i] = fileExtensions[i].ToLower();
 
             SysCol.HashSet<string> files = new SysCol.HashSet<string>();
-            foreach (string file in EnumerateFiles(filter, allowOverride))
+            foreach (string file in EnumerateFiles(filter))
                 foreach (string ext in fileExtensions)
                     if (file.EndsWith(ext))
                         if (files.Add(file))
                             yield return file;
         }
 
-        public LinkedList<string> GetDirectories(string baseDir, bool allowOverride = true)
+        public LinkedList<string> GetDirectories(string baseDir)
         {
             AssertAlive();
             LinkedList<string> lst = new LinkedList<string>();
@@ -239,67 +190,46 @@ namespace ChaosFramework.IO
                 if (str != dir && str.StartsWith(dir))
                     lst.AddUnique(str);
 
-            if (allowOverride)
-                foreach (string str in overrideDirectories)
-                    if (str != dir && str.StartsWith(dir))
-                        lst.AddUnique(str);
-
             return lst;
         }
 
-        public bool ContainsFile(string file, bool allowOverride = true)
+        public bool ContainsFile(string file)
         {
             AssertAlive();
             file = Normalization.NormalizeRelative(file);
-            return (allowOverride && overrideFiles.Contains(file)) || filePos.ContainsKey(file);
+            return filePos.ContainsKey(file);
         }
 
-        public byte[] LoadFile(string file, bool allowOverride = true)
+        public byte[] LoadFile(string file)
         {
             AssertAlive();
             file = Normalization.NormalizeRelative(file);
-            if (allowOverride && overrideFiles.Contains(file))
-            {
-                string ioFile = $"{overrideDirectory.FullName}\\{file}";
-                return File.ReadAllBytes(ioFile);
-            }
-            else
-            {
-                FilePos filePosition;
-                if (!filePos.TryGetValue(file, out filePosition))
-                    throw new FileNotFoundException($"Archive does not contain file {file}.");
 
-                if (filePosition.length == 0)
-                    return Array<byte>.empty;
+            FilePos filePosition;
+            if (!filePos.TryGetValue(file, out filePosition))
+                throw new FileNotFoundException($"Archive does not contain file {file}.");
 
-                using (Stream str = CreateStream(filePosition))
-                {
-                    byte[] output = new byte[filePosition.length];
-                    str.Read(output, 0, filePosition.length);
-                    return output;
-                }
+            if (filePosition.length == 0)
+                return Array<byte>.empty;
+
+            using (Stream str = CreateStream(filePosition))
+            {
+                byte[] output = new byte[filePosition.length];
+                str.Read(output, 0, filePosition.length);
+                return output;
             }
         }
 
-        public Stream OpenRead(string file) => OpenRead(file, true);
-
-        public Stream OpenRead(string file, bool allowOverride)
+        public Stream OpenRead(string file)
         {
             AssertAlive();
             file = Normalization.NormalizeRelative(file);
-            if (allowOverride && overrideFiles.Contains(file))
-            {
-                string ioFile = $"{overrideDirectory.FullName}\\{file}";
-                return File.OpenRead(ioFile);
-            }
-            else
-            {
-                FilePos filePosition;
-                if (!filePos.TryGetValue(file, out filePosition))
-                    throw new FileNotFoundException($"Archive does not contain file {file}.");
 
-                return CreateStream(filePosition);
-            }
+            FilePos filePosition;
+            if (!filePos.TryGetValue(file, out filePosition))
+                throw new FileNotFoundException($"Archive does not contain file {file}.");
+
+            return CreateStream(filePosition);
         }
 
         Stream CreateStream(FilePos filePosition)

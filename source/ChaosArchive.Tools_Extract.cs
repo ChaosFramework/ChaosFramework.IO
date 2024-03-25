@@ -27,7 +27,7 @@ namespace ChaosFramework.IO
             {
                 archive.AssertAlive();
                 LinkedList<Task> tasks = new LinkedList<Task>();
-                foreach (string file in archive.GetFiles(filter, false))
+                foreach (string file in archive.GetFiles(filter))
                 {
                     Task t = new Task(ExtractFile, new FileExtractionContext(archive, targetDirectory, file));
                     tasks.Add(t);
