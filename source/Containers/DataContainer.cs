@@ -173,11 +173,8 @@ namespace ChaosFramework.IO.Containers
             if (!resource.CanRead)
                 throw new Exception("Resource stream is unreadable. It was likely closed.");
 
-            resource.Position = 0;
             DataType obj = LoadFromStream(key, resource);
-
             resource.Dispose();
-
             return obj;
         }
 
