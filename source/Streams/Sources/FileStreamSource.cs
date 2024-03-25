@@ -17,9 +17,9 @@ namespace ChaosFramework.IO.Streams.Sources
                 throw new DirectoryNotFoundException();
         }
 
-        IEnumerable<string> StreamSource.EnumerateKeys(string filter)
+        IEnumerable<string> StreamSource.EnumerateKeys(string glob)
             => from file in rootDir.EnumerateFiles("*", SearchOption.AllDirectories)
-               let globRegex = new Regex(GlobRegex.ConvertGlobToRegex(filter), RegexOptions.IgnoreCase)
+               let globRegex = new Regex(GlobRegex.ConvertGlobToRegex(glob), RegexOptions.IgnoreCase)
                let key = file.FullName.Remove(0, rootDir.FullName.Length)
                where globRegex.IsMatch(key)
                select key;

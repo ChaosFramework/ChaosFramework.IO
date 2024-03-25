@@ -21,9 +21,9 @@ namespace ChaosFramework.IO.Streams.Sources
             resourceSet = resources.GetResourceSet(this.culture, true, false);
         }
 
-        IEnumerable<string> StreamSource.EnumerateKeys(string filter)
+        IEnumerable<string> StreamSource.EnumerateKeys(string glob)
             => from System.Collections.DictionaryEntry resource in resourceSet
-               let globRegex = new Regex(ChaosUtil.Platform.Paths.GlobRegex.ConvertGlobToRegex(filter))
+               let globRegex = new Regex(ChaosUtil.Platform.Paths.GlobRegex.ConvertGlobToRegex(glob))
                let key = ResourceNameToKey((string)resource.Key)
                where globRegex.IsMatch(key)
                select key;

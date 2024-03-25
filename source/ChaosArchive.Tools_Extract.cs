@@ -23,11 +23,11 @@ namespace ChaosFramework.IO
                 }
             }
 
-            public static void ExtractArchive(ChaosArchive archive, string targetDirectory, string filter = GlobRegex.MATCH_ALL_GLOB)
+            public static void ExtractArchive(ChaosArchive archive, string targetDirectory, string glob = GlobRegex.MATCH_ALL_GLOB)
             {
                 archive.AssertAlive();
                 LinkedList<Task> tasks = new LinkedList<Task>();
-                foreach (string file in archive.GetFiles(filter))
+                foreach (string file in archive.GetFiles(glob))
                 {
                     Task t = new Task(ExtractFile, new FileExtractionContext(archive, targetDirectory, file));
                     tasks.Add(t);

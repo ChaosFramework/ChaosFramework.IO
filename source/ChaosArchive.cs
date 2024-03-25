@@ -113,18 +113,18 @@ namespace ChaosFramework.IO
             }
         }
 
-        public LinkedList<string> GetFilesCached(string filter = GlobRegex.MATCH_ALL_GLOB)
+        public LinkedList<string> GetFilesCached(string glob = GlobRegex.MATCH_ALL_GLOB)
         {
             LinkedList<string> files;
-            if (!cachedFileSearches.TryGetValue(filter, out files))
-                cachedFileSearches[filter] = files = GetFiles(filter);
+            if (!cachedFileSearches.TryGetValue(glob, out files))
+                cachedFileSearches[glob] = files = GetFiles(glob);
             return files;
         }
 
-        public LinkedList<string> GetFiles(string filter = GlobRegex.MATCH_ALL_GLOB)
+        public LinkedList<string> GetFiles(string glob = GlobRegex.MATCH_ALL_GLOB)
         {
             AssertAlive();
-            Regex regex = new Regex(GlobRegex.ConvertGlobToRegex(filter), RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            Regex regex = new Regex(GlobRegex.ConvertGlobToRegex(glob), RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
             LinkedList<string> files = new LinkedList<string>();
             foreach (string file in filePos.Keys)
@@ -134,14 +134,14 @@ namespace ChaosFramework.IO
             return files;
         }
 
-        public LinkedList<string> GetFiles(string[] fileExtensions, string filter = GlobRegex.MATCH_ALL_GLOB)
+        public LinkedList<string> GetFiles(string[] fileExtensions, string glob = GlobRegex.MATCH_ALL_GLOB)
         {
             AssertAlive();
             for (int i = 0; i < fileExtensions.Length; i++)
                 fileExtensions[i] = fileExtensions[i].ToLower();
 
             LinkedList<string> files = new LinkedList<string>();
-            foreach (string file in GetFiles(filter))
+            foreach (string file in GetFiles(glob))
                 foreach (string ext in fileExtensions)
                     if (file.EndsWith(ext))
                     {
@@ -152,10 +152,10 @@ namespace ChaosFramework.IO
             return files;
         }
 
-        public SysCol.IEnumerable<string> EnumerateFiles(string filter = GlobRegex.MATCH_ALL_GLOB)
+        public SysCol.IEnumerable<string> EnumerateFiles(string glob = GlobRegex.MATCH_ALL_GLOB)
         {
             AssertAlive();
-            Regex regex = new Regex(GlobRegex.ConvertGlobToRegex(filter), RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            Regex regex = new Regex(GlobRegex.ConvertGlobToRegex(glob), RegexOptions.Compiled | RegexOptions.IgnoreCase);
             SysCol.HashSet<string> files = new SysCol.HashSet<string>();
 
             foreach (string file in filePos.Keys)
@@ -166,7 +166,7 @@ namespace ChaosFramework.IO
 
         public SysCol.IEnumerable<string> EnumerateFiles(
             string[] fileExtensions,
-            string filter = GlobRegex.MATCH_ALL_GLOB
+            string glob = GlobRegex.MATCH_ALL_GLOB
             )
         {
             AssertAlive();
@@ -174,7 +174,7 @@ namespace ChaosFramework.IO
                 fileExtensions[i] = fileExtensions[i].ToLower();
 
             SysCol.HashSet<string> files = new SysCol.HashSet<string>();
-            foreach (string file in EnumerateFiles(filter))
+            foreach (string file in EnumerateFiles(glob))
                 foreach (string ext in fileExtensions)
                     if (file.EndsWith(ext))
                         if (files.Add(file))
@@ -246,7 +246,7 @@ namespace ChaosFramework.IO
         }
 
         bool Streams.StreamSource.ContainsKey(string key) => ContainsFile(key);
-        SysCol.IEnumerable<string> Streams.StreamSource.EnumerateKeys(string filter) => EnumerateFiles(filter);
+        SysCol.IEnumerable<string> Streams.StreamSource.EnumerateKeys(string glob) => EnumerateFiles(glob);
         Stream Streams.StreamSource.OpenRead(string key) => OpenRead(key);
 
         protected override void DoDispose()

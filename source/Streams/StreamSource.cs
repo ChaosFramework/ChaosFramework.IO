@@ -9,6 +9,6 @@ namespace ChaosFramework.IO.Streams
 
         Stream OpenRead(string key);
 
-        SysCol.IEnumerable<string> EnumerateKeys(string filter);
+        SysCol.IEnumerable<string> EnumerateKeys(string glob);
     }
 }
