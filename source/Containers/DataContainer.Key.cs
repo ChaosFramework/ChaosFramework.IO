@@ -6,14 +6,10 @@ namespace ChaosFramework.IO.Containers
         public class Key
         {
             public readonly string key;
-            internal readonly string comparisonKey;
-            internal readonly string shortComparisonKey;
 
             protected internal Key(string key)
             {
-                this.key = key;
-                comparisonKey = ChaosUtil.Platform.Paths.Normalization.NormalizeFullPath(key);
-                shortComparisonKey = key.ToLower();
+                this.key = ChaosUtil.Platform.Paths.Normalization.NormalizeRelative(key);
             }
 
             public static bool operator ==(Key a, Key b)
@@ -26,9 +22,9 @@ namespace ChaosFramework.IO.Containers
 
             public bool Equals(Key other)
                 => (object)other != null
-                && (shortComparisonKey.Equals(other.shortComparisonKey) || comparisonKey.Equals(other.comparisonKey));
+                && key.Equals(other.key);
 
-            public override int GetHashCode() => comparisonKey.GetHashCode();
+            public override int GetHashCode() => key.GetHashCode();
         }
     }
 }

@@ -20,12 +20,11 @@ namespace ChaosFramework.IO.Containers
                 => Equals(obj as ParameterizedKey);
 
             public bool Equals(ParameterizedKey other)
-                => (object)other != null
-                && comparisonKey.Equals(other.comparisonKey)
+                => base.Equals(other)
                 && Collections.Util.CheckEquality(param, other.param);
 
             public override int GetHashCode()
-                => comparisonKey.GetHashCode() ^ param.GetHashCode();
+                => base.GetHashCode() ^ param.GetHashCode();
         }
     }
 }
