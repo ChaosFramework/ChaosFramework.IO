@@ -10,7 +10,7 @@ using SysCol = System.Collections.Generic;
 
 namespace ChaosFramework.IO
 {
-    public partial class ChaosArchive : Disposable
+    public partial class ChaosArchive : Disposable, Streams.StreamSource
     {
         struct FilePos
         {
@@ -244,6 +244,10 @@ namespace ChaosFramework.IO
                         System.IO.MemoryMappedFiles.MemoryMappedFileAccess.Read
                         );
         }
+
+        bool Streams.StreamSource.ContainsKey(string key) => ContainsFile(key);
+        SysCol.IEnumerable<string> Streams.StreamSource.EnumerateKeys(string filter) => EnumerateFiles(filter);
+        Stream Streams.StreamSource.OpenRead(string key) => OpenRead(key);
 
         protected override void DoDispose()
         {

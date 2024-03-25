@@ -1,4 +1,5 @@
 using ChaosFramework.Core;
+using ChaosFramework.IO.Streams;
 using System;
 using SysCol = System.Collections.Generic;
 
@@ -8,16 +9,12 @@ namespace ChaosFramework.IO.Containers
     {
         public delegate DataType Factory();
 
-        static DataType LoadFromFile(DataContainer<DataType> container, Key key) => container.LoadFromFile(key);
-        static DataType LoadFromArchive(DataContainer<DataType> container, Key key) => container.LoadFromArchive(key);
-
-        public readonly ChaosArchive archive;
+        public readonly StreamSource streamSource;
         public readonly bool backgroundLoading;
 
         readonly MonitoringWorker monitoringWorker;
 
         readonly SysCol.Dictionary<Key, Entry> data = new SysCol.Dictionary<Key, Entry>();
-        readonly SysCol.Dictionary<Key, System.IO.Stream> resources = new SysCol.Dictionary<Key, System.IO.Stream>();
         readonly SysCol.Dictionary<Key, Factory> custom = new SysCol.Dictionary<Key, Factory>();
 
         DataType defaultValue;
@@ -39,13 +36,13 @@ namespace ChaosFramework.IO.Containers
         public SysCol.IEnumerable<Key> keys => data.Keys;
 
         public DataContainer(
-            ChaosArchive archive,
+            StreamSource streamSource,
             bool monitoring,
             bool backgroundLoading = false,
             Factory defaultGenerator = null
             )
         {
-            this.archive = archive;
+            this.streamSource = streamSource;
             this.backgroundLoading = backgroundLoading;
             this.defaultGenerator = defaultGenerator;
             if (monitoring)
@@ -75,38 +72,12 @@ namespace ChaosFramework.IO.Containers
             params Disposable[] monitors
             )
         {
-            bool directoryExists = System.IO.Directory.Exists(directory);
-            if (directoryExists)
-                LoadDirectoryFromFileSystem(generateKey, directory, fileExtensions, recursive, monitor1, monitors);
-            else if (archive == null)
-                throw new Exception($"No directory \"{directory}\" found.");
-
-            if (archive != null)
-                foreach (string file in archive.GetFiles(fileExtensions, $"{directory}\\{(recursive ? "**" : "*")}"))
-                    Load(generateKey(file), monitor1, monitors);
-        }
-
-        void LoadDirectoryFromFileSystem(
-            Func<string, Key> generateKey,
-            string directory,
-            string[] fileExtensions,
-            bool recursive,
-            Disposable monitor1,
-            params Disposable[] monitors
-            )
-        {
-            if (recursive)
-                foreach (string subDir in System.IO.Directory.EnumerateDirectories(directory))
-                    LoadDirectoryFromFileSystem(generateKey, subDir, fileExtensions, recursive, monitor1, monitors);
-
-            for (int i = 0; i < fileExtensions.Length; i++)
-                fileExtensions[i] = fileExtensions[i].Trim().ToLower();
-
-            foreach (string file in System.IO.Directory.EnumerateFiles(directory))
+            // TODO: Get rid of fileExtensions
+            foreach (string key in streamSource.EnumerateKeys($"{directory}\\{(recursive ? "**" : "*")}"))
                 foreach (string ext in fileExtensions)
-                    if (file.ToLower().EndsWith(ext))
+                    if (key.ToLower().EndsWith(ext.ToLower()))
                     {
-                        Load(generateKey(file), monitor1, monitors);
+                        Load(generateKey(key), monitor1, monitors);
                         break;
                     }
         }
@@ -130,12 +101,8 @@ namespace ChaosFramework.IO.Containers
                     System.IO.Stream resource;
                     if (custom.TryGetValue(key, out factory))
                         returnVal = new Entry(this, key, (_, __) => factory(), monitor1, monitors);
-                    else if (resources.TryGetValue(key, out resource))
+                    else if (streamSource.TryOpenRead(key.key, out resource))
                         returnVal = new Entry(this, key, (_, k) => _LoadFromResource(k, resource), monitor1, monitors);
-                    else if (System.IO.File.Exists(key.key))
-                        returnVal = new Entry(this, key, LoadFromFile, monitor1, monitors);
-                    else if (archive != null && archive.ContainsFile(key.key))
-                        returnVal = new Entry(this, key, LoadFromArchive, monitor1, monitors);
                     else
                         return false;
 
@@ -160,20 +127,6 @@ namespace ChaosFramework.IO.Containers
                 throw new SysCol.KeyNotFoundException($"Could not find key \"{key.key}\".");
 
             return result;
-        }
-
-        public void AddResource(string key, byte[] resource)
-            => AddResource(key, new System.IO.MemoryStream(resource));
-
-        public virtual void AddResource(string key, System.IO.Stream resource)
-            => AddResource(GenerateKey(key), resource);
-
-        protected void AddResource(Key key, System.IO.Stream resource)
-        {
-            if (ContainsKey(key) || resources.ContainsKey(key))
-                throw new InvalidOperationException($"{GetType().Name} already contains resource \"{key.key}\".");
-
-            resources[key] = resource;
         }
 
         public virtual void AddCustom(string key, Factory factory)
@@ -215,25 +168,20 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
-        protected abstract DataType LoadFromFile(Key key);
-
         DataType _LoadFromResource(Key key, System.IO.Stream resource)
         {
             if (!resource.CanRead)
                 throw new Exception("Resource stream is unreadable. It was likely closed.");
 
             resource.Position = 0;
-            return LoadFromResource(key, resource);
+            DataType obj = LoadFromResource(key, resource);
+
+            resource.Dispose();
+
+            return obj;
         }
 
         protected abstract DataType LoadFromResource(Key key, System.IO.Stream resource);
-
-        internal DataType LoadFromArchive(Key key)
-        {
-            // TODO: REJOICE, NOBODY EVER DISPOSES THIS!
-            System.IO.Stream archiveStream = archive.OpenRead(key.key);
-            return _LoadFromResource(key, archiveStream);
-        }
 
         public virtual void Dispose(string key)
             => Dispose(GenerateKey(key));
@@ -268,7 +216,6 @@ namespace ChaosFramework.IO.Containers
                     DisposeItem(pair.Value.content);
 
                 data.Clear();
-                resources.Clear();
                 custom.Clear();
             }
         }
