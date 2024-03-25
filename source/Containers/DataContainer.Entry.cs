@@ -7,7 +7,7 @@ namespace ChaosFramework.IO.Containers
     {
         public sealed class Entry
         {
-            public delegate DataType LoadProcedure(DataContainer<DataType> container, Key key);
+            public delegate DataType LoadProcedure(Key key);
 
             public static Entry Mock(DataType content) => new Entry(null, content);
 
@@ -48,7 +48,7 @@ namespace ChaosFramework.IO.Containers
             internal void Load()
             {
                 if (parent == null || !parent.backgroundLoading)
-                    SetContent(loadProcedure(parent, key));
+                    SetContent(loadProcedure(key));
                 else
                 {
                     SetContent(parent.defaultValue);
@@ -56,7 +56,7 @@ namespace ChaosFramework.IO.Containers
                 }
             }
 
-            void LoadContent() => SetContent(loadProcedure(parent, key));
+            void LoadContent() => SetContent(loadProcedure(key));
 
             public void RefreshContent()
             {

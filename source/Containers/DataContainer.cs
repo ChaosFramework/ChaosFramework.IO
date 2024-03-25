@@ -100,9 +100,9 @@ namespace ChaosFramework.IO.Containers
                     Factory factory;
                     System.IO.Stream resource;
                     if (custom.TryGetValue(key, out factory))
-                        returnVal = new Entry(this, key, (_, __) => factory(), monitor1, monitors);
+                        returnVal = new Entry(this, key, _ => factory(), monitor1, monitors);
                     else if (streamSource.TryOpenRead(key.key, out resource))
-                        returnVal = new Entry(this, key, (_, k) => _LoadFromResource(k, resource), monitor1, monitors);
+                        returnVal = new Entry(this, key, k => _LoadFromResource(k, resource), monitor1, monitors);
                     else
                         return false;
 
