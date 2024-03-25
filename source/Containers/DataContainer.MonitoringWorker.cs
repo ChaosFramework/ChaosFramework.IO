@@ -75,7 +75,7 @@ namespace ChaosFramework.IO.Containers
                         if (!parent.data[key].myMonitors.empty)
                             continue;
 
-                        System.Diagnostics.Debug.WriteLine($"{GetType().Name}: disposing \"{key.key}\"");
+                        System.Diagnostics.Debug.WriteLine($"{parent.GetType().Name}: disposing \"{key.key}\"");
                         parent.RemoveEntry(key);
                     }
                     disposals.Clear();
