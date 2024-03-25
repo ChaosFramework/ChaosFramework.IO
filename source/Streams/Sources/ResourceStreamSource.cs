@@ -23,7 +23,7 @@ namespace ChaosFramework.IO.Streams.Sources
 
         IEnumerable<string> StreamSource.EnumerateKeys(string glob)
             => from System.Collections.DictionaryEntry resource in resourceSet
-               let globRegex = new Regex(ChaosUtil.Platform.Paths.GlobRegex.ConvertGlobToRegex(glob))
+               let globRegex = new Regex(ChaosUtil.Platform.Paths.GlobRegex.ConvertGlobToRegex(glob), RegexOptions.IgnoreCase)
                let key = ResourceNameToKey((string)resource.Key)
                where globRegex.IsMatch(key)
                select key;
@@ -33,8 +33,10 @@ namespace ChaosFramework.IO.Streams.Sources
 
         Stream StreamSource.OpenRead(string key)
         {
-            string resourceName = KeyToResourceName(key);
-            object resource = resources.GetObject(resourceName);
+            IEnumerable<string> keys = ((StreamSource)this).EnumerateKeys(key);
+            string keyWithCorrectCapitalization = keys.First();
+            string resourceName = KeyToResourceName(keyWithCorrectCapitalization);
+            object resource = resourceSet.GetObject(resourceName);
             return new MemoryStream((byte[])resource);
         }
 
