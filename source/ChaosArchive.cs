@@ -45,26 +45,23 @@ namespace ChaosFramework.IO
 
         readonly SysCol.Dictionary<string, LinkedList<string>> cachedFileSearches = new SysCol.Dictionary<string, LinkedList<string>>();
 
-        public ChaosArchive(string archivePath, bool verifyChecksum)
+        public ChaosArchive(FileInfo archiveFile, bool verifyChecksum)
         {
-            archiveFile = new FileInfo(archivePath);
+            this.archiveFile = archiveFile;
             if (!archiveFile.Exists)
-                throw new FileNotFoundException("Archive file not found.", archivePath);
+                throw new FileNotFoundException("Archive file not found.", archiveFile.FullName);
 
             string lastFile = null;
             long nextFilePos = 0, lastFilePos = 0;
             FileStream str = File.OpenRead(archiveFile.FullName); // TODO: do we need to dispose this?
             BinaryReader rd = new BinaryReader(str);
-            string baseDir = Normalization.NormalizeFullPath(null);
             LinkedList<string> directories = new LinkedList<string>();
 
             int numFiles = rd.Read<int>();
             for (int i = 0; i < numFiles; i++)
             {
                 string newFile = rd.ReadString();
-                string directory = Normalization.NormalizeFullPath(Path.GetDirectoryName(newFile))
-                                                .Remove(0, baseDir.Length)
-                                                .TrimStart('\\');
+                string directory = Normalization.NormalizeRelative(Path.GetDirectoryName(newFile)).TrimStart('\\');
 
                 directories.AddUnique(directory);
                 nextFilePos = rd.Read<long>();
