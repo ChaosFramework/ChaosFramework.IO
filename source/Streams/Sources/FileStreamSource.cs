@@ -18,15 +18,8 @@ namespace ChaosFramework.IO.Streams.Sources
         public virtual IEnumerable<string> EnumerateKeys()
             => rootDir.Exists
              ? from file in rootDir.EnumerateFiles("*", SearchOption.AllDirectories)
-               let key = file.FullName.Remove(0, rootDir.FullName.Length)
-               select key
+               select file.FullName.Remove(0, rootDir.FullName.Length)
              : ChaosUtil.Primitives.Array<string>.empty;
-
-        public virtual IEnumerable<string> EnumerateKeys(string glob)
-            => from key in EnumerateKeys()
-               let globRegex = new Regex(GlobRegex.ConvertGlobToRegex(glob), RegexOptions.IgnoreCase)
-               where globRegex.IsMatch(key)
-               select key;
 
         public virtual bool ContainsKey(string key)
             => File.Exists($"{rootDir.FullName}\\{key}");

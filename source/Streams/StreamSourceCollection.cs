@@ -29,11 +29,11 @@ namespace ChaosFramework.IO.Streams
             throw new System.Exception($"Could not find a stream for \"{key}\".");
         }
 
-        SysCol.IEnumerable<string> StreamSource.EnumerateKeys(string glob)
+        SysCol.IEnumerable<string> StreamSource.EnumerateKeys()
         {
             SysCol.HashSet<string> keys = new SysCol.HashSet<string>();
             foreach (StreamSource source in sources)
-                foreach (string key in source.EnumerateKeys(glob))
+                foreach (string key in source.EnumerateKeys())
                     if (keys.Add(key))
                         yield return key;
         }

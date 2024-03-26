@@ -16,11 +16,8 @@ namespace ChaosFramework.IO.Streams.Sources
             Refresh();
         }
 
-        public override IEnumerable<string> EnumerateKeys(string glob)
-            => from key in keys
-               let globRegex = new Regex(GlobRegex.ConvertGlobToRegex(glob), RegexOptions.IgnoreCase)
-               where globRegex.IsMatch(key)
-               select key;
+        public override IEnumerable<string> EnumerateKeys()
+            => from key in keys select key;
 
         public override bool ContainsKey(string key)
             => keys.Contains(Normalization.NormalizeRelative(key));

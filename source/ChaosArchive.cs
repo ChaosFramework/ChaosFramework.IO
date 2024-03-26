@@ -1,5 +1,6 @@
 using ChaosFramework.Collections;
 using ChaosFramework.Core;
+using ChaosFramework.IO.Streams;
 using ChaosUtil.Platform.Paths;
 using ChaosUtil.Primitives;
 using System;
@@ -10,7 +11,7 @@ using SysCol = System.Collections.Generic;
 
 namespace ChaosFramework.IO
 {
-    public partial class ChaosArchive : Disposable, Streams.StreamSource
+    public partial class ChaosArchive : Disposable, StreamSource
     {
         struct FilePos
         {
@@ -152,16 +153,11 @@ namespace ChaosFramework.IO
             return files;
         }
 
-        public SysCol.IEnumerable<string> EnumerateFiles(string glob = GlobRegex.MATCH_ALL_GLOB)
+        public SysCol.IEnumerable<string> EnumerateFiles()
         {
             AssertAlive();
-            Regex regex = new Regex(GlobRegex.ConvertGlobToRegex(glob), RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            SysCol.HashSet<string> files = new SysCol.HashSet<string>();
-
             foreach (string file in filePos.Keys)
-                if (regex.IsMatch(file))
-                    if (!files.Contains(file))
-                        yield return file;
+                yield return file;
         }
 
         public SysCol.IEnumerable<string> EnumerateFiles(
@@ -173,12 +169,10 @@ namespace ChaosFramework.IO
             for (int i = 0; i < fileExtensions.Length; i++)
                 fileExtensions[i] = fileExtensions[i].ToLower();
 
-            SysCol.HashSet<string> files = new SysCol.HashSet<string>();
-            foreach (string file in EnumerateFiles(glob))
+            foreach (string file in ((StreamSource)this).EnumerateKeys(glob))
                 foreach (string ext in fileExtensions)
                     if (file.EndsWith(ext))
-                        if (files.Add(file))
-                            yield return file;
+                        yield return file;
         }
 
         public LinkedList<string> GetDirectories(string baseDir)
@@ -245,9 +239,9 @@ namespace ChaosFramework.IO
                         );
         }
 
-        bool Streams.StreamSource.ContainsKey(string key) => ContainsFile(key);
-        SysCol.IEnumerable<string> Streams.StreamSource.EnumerateKeys(string glob) => EnumerateFiles(glob);
-        Stream Streams.StreamSource.OpenRead(string key) => OpenRead(key);
+        bool StreamSource.ContainsKey(string key) => ContainsFile(key);
+        SysCol.IEnumerable<string> StreamSource.EnumerateKeys() => EnumerateFiles();
+        Stream StreamSource.OpenRead(string key) => OpenRead(key);
 
         protected override void DoDispose()
         {
