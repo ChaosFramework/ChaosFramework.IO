@@ -2,7 +2,6 @@ using ChaosUtil.Platform.Paths;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace ChaosFramework.IO.Streams.Sources
 {
