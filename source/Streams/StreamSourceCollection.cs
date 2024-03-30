@@ -22,7 +22,7 @@ namespace ChaosFramework.IO.Streams
             foreach (StreamSource source in sources)
             {
                 Stream str;
-                if (source.TryOpenRead(key, out str))
+                if (source.OpenReadIfExisting(key, out str))
                     return str;
             }
 

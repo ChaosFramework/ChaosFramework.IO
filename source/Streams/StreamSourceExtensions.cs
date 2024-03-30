@@ -8,7 +8,15 @@ namespace ChaosFramework.IO.Streams
 {
     public static class StreamSourceExtensions
     {
-        public static bool TryOpenRead(this StreamSource streamSource, string key, out Stream stream)
+        /// <summary> Retrieve a stream for the given key, if it exists. </summary>
+        /// <param name="streamSource"> The streamSource to retrieve the stream from. </param>
+        /// <param name="key"> The key to retrieve the stream for. </param>
+        /// <param name="stream"> The retrieved stream if successful; <see langword="null"/> otherwise. </param>
+        /// <returns>
+        ///     <see langword="true"/> if a stream was retrieved;
+        ///     <see langword="false"/> if no stream was found.
+        /// </returns>
+        public static bool OpenReadIfExisting(this StreamSource streamSource, string key, out Stream stream)
         {
             if (streamSource.ContainsKey(key))
             {
