@@ -98,11 +98,10 @@ namespace ChaosFramework.IO.Containers
                 try
                 {
                     Factory factory;
-                    System.IO.Stream resource;
                     if (custom.TryGetValue(key, out factory))
                         returnVal = new Entry(this, key, _ => factory(), monitor1, monitors);
-                    else if (streamSource.TryOpenRead(key.key, out resource))
-                        returnVal = new Entry(this, key, k => LoadFromStreamInternal(k, resource), monitor1, monitors);
+                    else if (streamSource.ContainsKey(key.key))
+                        returnVal = new Entry(this, key, LoadFromStreamInternal, monitor1, monitors);
                     else
                         return false;
 
@@ -168,8 +167,13 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
-        DataType LoadFromStreamInternal(Key key, System.IO.Stream resource)
+        DataType LoadFromStreamInternal(Key key)
         {
+            if (!streamSource.ContainsKey(key.key))
+                throw new Exception($"Key no longer exists: \"{key.key}\".");
+
+            System.IO.Stream resource = streamSource.OpenRead(key.key);
+
             if (!resource.CanRead)
                 throw new Exception("Resource stream is unreadable. It was likely closed.");
 
