@@ -24,6 +24,7 @@ namespace ChaosFramework.IO.Streams.Sources
         public void Refresh()
         {
             keys.Clear();
+            rootDir.Refresh();
             foreach (string file in base.EnumerateKeys().Select(Normalization.NormalizeRelative))
                 keys.Add(file);
         }
