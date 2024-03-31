@@ -2,7 +2,7 @@ using ChaosFramework.Core;
 
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class ParameterizedAssetContainer<DataType, ParameterType> : AssetContainer<DataType>
+    public abstract partial class ParameterizedAssetContainer<AssetType, ParameterType> : AssetContainer<AssetType>
     {
         public virtual ParameterType defaultParameter { get; protected set; } = default(ParameterType);
 
