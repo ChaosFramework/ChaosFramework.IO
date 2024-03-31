@@ -5,7 +5,7 @@ using SysCol = System.Collections.Generic;
 
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class DataContainer<DataType> : Disposable, SysCol.IEnumerable<DataContainer<DataType>.Entry>
+    public abstract partial class AssetContainer<DataType> : Disposable, SysCol.IEnumerable<AssetContainer<DataType>.Entry>
     {
         public delegate DataType Factory();
 
@@ -35,7 +35,7 @@ namespace ChaosFramework.IO.Containers
         public SysCol.IEnumerable<Entry> content => data.Values;
         public SysCol.IEnumerable<Key> keys => data.Keys;
 
-        public DataContainer(
+        public AssetContainer(
             StreamSource streamSource,
             bool monitoring,
             bool backgroundLoading = false,

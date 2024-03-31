@@ -2,13 +2,13 @@ using ChaosFramework.Core;
 
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class ParameterizedDataContainer<DataType, ParameterType> : DataContainer<DataType>
+    public abstract partial class ParameterizedAssetContainer<DataType, ParameterType> : AssetContainer<DataType>
     {
         public virtual ParameterType defaultParameter { get; protected set; } = default(ParameterType);
 
         protected override Key GenerateKey(string path) => new ParameterizedKey(path, defaultParameter);
 
-        public ParameterizedDataContainer(Streams.StreamSource streamSource, bool monitoring, bool backgroundLoading = false)
+        public ParameterizedAssetContainer(Streams.StreamSource streamSource, bool monitoring, bool backgroundLoading = false)
             : base(streamSource, monitoring, backgroundLoading)
         { }
 

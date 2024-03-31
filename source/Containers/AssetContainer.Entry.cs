@@ -3,7 +3,7 @@ using ChaosFramework.Core;
 
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class DataContainer<DataType>
+    public abstract partial class AssetContainer<DataType>
     {
         public sealed class Entry
         {
@@ -11,7 +11,7 @@ namespace ChaosFramework.IO.Containers
 
             public static Entry Mock(DataType content) => new Entry(null, content);
 
-            readonly DataContainer<DataType> parent;
+            readonly AssetContainer<DataType> parent;
             public readonly Key key;
             public DataType content { get; private set; }
 
@@ -27,7 +27,7 @@ namespace ChaosFramework.IO.Containers
             }
 
             internal Entry(
-                DataContainer<DataType> parent,
+                AssetContainer<DataType> parent,
                 Key key,
                 LoadProcedure loadProcedure,
                 Disposable monitor1,
