@@ -13,6 +13,8 @@ namespace ChaosFramework.IO.Streams.Sources
         public readonly ResourceSet resourceSet;
         public readonly CultureInfo culture;
 
+        bool alive = true;
+
         public ResourceStreamSource(ResourceManager resources, CultureInfo culture = null)
         {
             if (resources == null)
@@ -55,5 +57,26 @@ namespace ChaosFramework.IO.Streams.Sources
         protected virtual string ResourceNameToKey(string resourceName) => resourceName;
 
         protected virtual string KeyToResourceName(string key) => key;
+
+        bool StreamSource.alive
+        {
+            get
+            {
+                if (alive)
+                    try
+                    {
+                        // throws an ObjectDisposedException if resourceSet is disposed
+                        resourceSet.GetEnumerator().MoveNext();
+
+                        return true;
+                    }
+                    catch (System.ObjectDisposedException)
+                    {
+                        return alive = false;
+                    }
+                else
+                    return false;
+            }
+        }
     }
 }

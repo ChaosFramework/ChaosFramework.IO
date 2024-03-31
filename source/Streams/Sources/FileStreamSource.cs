@@ -62,5 +62,7 @@ namespace ChaosFramework.IO.Streams.Sources
 
         static System.Exception InvalidPathException(string key, System.Exception ex)
             => new IllegalKeyException(key, ex);
+
+        bool StreamSource.alive => true;
     }
 }

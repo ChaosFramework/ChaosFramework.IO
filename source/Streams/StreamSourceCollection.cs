@@ -8,6 +8,8 @@ namespace ChaosFramework.IO.Streams
 {
     public class StreamSourceCollection : SysCol.IEnumerable<StreamSource>, StreamSource
     {
+        static bool Alive(StreamSource source) => source.alive;
+
         readonly StreamSource[] sources;
 
         public StreamSourceCollection(params StreamSource[] sources)
@@ -47,5 +49,7 @@ namespace ChaosFramework.IO.Streams
             foreach (StreamSource source in sources)
                 yield return source;
         }
+
+        bool StreamSource.alive => sources.All(Alive);
     }
 }
