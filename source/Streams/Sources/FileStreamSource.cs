@@ -52,16 +52,13 @@ namespace ChaosFramework.IO.Streams.Sources
         Stream StreamSource.OpenRead(string key)
         {
             try { return File.OpenRead($"{rootDir.FullName}\\{key}"); }
-            catch (PathTooLongException ex) { throw InvalidPathException(key, ex); }
-            catch (System.ArgumentException ex) { throw InvalidPathException(key, ex); }
-            catch (System.NotSupportedException ex) { throw InvalidPathException(key, ex); }
+            catch (PathTooLongException ex) { throw new KeyFormatException(key, ex); }
+            catch (System.ArgumentException ex) { throw new KeyFormatException(key, ex); }
+            catch (System.NotSupportedException ex) { throw new KeyFormatException(key, ex); }
             catch (FileNotFoundException ex) { throw new KeyNotFoundException(key, ex); }
             catch (DirectoryNotFoundException ex) { throw new KeyNotFoundException(key, ex); }
             catch (System.UnauthorizedAccessException ex) { throw new StreamAccessException(key, ex); }
         }
-
-        static System.Exception InvalidPathException(string key, System.Exception ex)
-            => new KeyFormatException(key, ex);
 
         bool StreamSource.alive => true;
     }
