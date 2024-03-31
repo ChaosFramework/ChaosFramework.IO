@@ -9,7 +9,6 @@ namespace ChaosFramework.IO.Streams.Sources
 {
     public class ResourceStreamSource : StreamSource
     {
-        public readonly ResourceManager resources;
         public readonly ResourceSet resourceSet;
         public readonly CultureInfo culture;
 
@@ -20,7 +19,6 @@ namespace ChaosFramework.IO.Streams.Sources
             if (resources == null)
                 throw new System.ArgumentNullException(nameof(resources));
 
-            this.resources = resources;
             this.culture = culture ?? CultureInfo.CurrentCulture;
             resourceSet = resources.GetResourceSet(this.culture, true, false);
 
