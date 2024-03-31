@@ -33,7 +33,7 @@ namespace ChaosFramework.IO.Streams.Sources
             if (key.StartsWith(keyPrefix))
                 return $"{resourceNamePrefix}{key.Substring(keyPrefix.Length)}";
             else
-                throw new IllegalKeyException(
+                throw new KeyFormatException(
                     key,
                     new System.ArgumentException(
                         $"Key must start with key prefix \"{keyPrefix}\".",
@@ -47,7 +47,7 @@ namespace ChaosFramework.IO.Streams.Sources
             if (resourceName.StartsWith(resourceNamePrefix))
                 return $"{keyPrefix}{resourceName.Substring(resourceNamePrefix.Length)}";
             else
-                throw new IllegalKeyException(
+                throw new KeyFormatException(
                     resourceName,
                     new System.ArgumentException(
                         $"Resource name must start with resource name prefix \"{resourceNamePrefix}\".",

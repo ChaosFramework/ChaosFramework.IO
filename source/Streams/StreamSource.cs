@@ -20,7 +20,7 @@ namespace ChaosFramework.IO.Streams
         ///     If this <see cref="StreamSource"/> is not <see cref="alive"/>, the behavior is undefined.
         /// </summary>
         /// <param name="key"> The key to retrieve a stream for. </param>
-        /// <exception cref="IllegalKeyException">
+        /// <exception cref="KeyFormatException">
         ///     Thrown if the provided <paramref name="key"/> has an illegal format.
         /// </exception>
         /// <exception cref="KeyNotFoundException">
