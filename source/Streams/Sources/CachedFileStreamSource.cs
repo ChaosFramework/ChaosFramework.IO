@@ -12,6 +12,9 @@ namespace ChaosFramework.IO.Streams.Sources
         public CachedFileStreamSource(DirectoryInfo rootDir)
             : base(rootDir)
         {
+            if (rootDir == null)
+                throw new System.ArgumentNullException(nameof(rootDir));
+
             Refresh();
         }
 
@@ -24,7 +27,16 @@ namespace ChaosFramework.IO.Streams.Sources
         public void Refresh()
         {
             keys.Clear();
-            rootDir.Refresh();
+            try
+            {
+                rootDir.Refresh();
+                AssertReadPermission();
+            }
+            catch (System.Exception ex)
+            {
+                throw new StreamSourceException("Could not refresh directory!", ex);
+            }
+
             foreach (string file in base.EnumerateKeys().Select(Normalization.NormalizeRelative))
                 keys.Add(file);
         }

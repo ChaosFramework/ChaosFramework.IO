@@ -15,12 +15,18 @@ namespace ChaosFramework.IO.Streams.Sources
 
         public ResourceStreamSource(ResourceManager resources, CultureInfo culture = null)
         {
+            if (resources == null)
+                throw new System.ArgumentNullException(nameof(resources));
+
             this.resources = resources;
             this.culture = culture ?? CultureInfo.CurrentCulture;
             resourceSet = resources.GetResourceSet(this.culture, true, false);
+
+            if (resourceSet == null)
+                throw new StreamSourceException("Resource set not found!");
         }
 
-        IEnumerable<string> StreamSource.EnumerateKeys()
+        public virtual IEnumerable<string> EnumerateKeys()
             => from System.Collections.DictionaryEntry resource in resourceSet
                select ResourceNameToKey((string)resource.Key);
 
@@ -30,14 +36,24 @@ namespace ChaosFramework.IO.Streams.Sources
         Stream StreamSource.OpenRead(string key)
         {
             IEnumerable<string> keys = ((StreamSource)this).EnumerateKeys(key);
-            string keyWithCorrectCapitalization = keys.First();
+            string keyWithCorrectCapitalization = keys.FirstOrDefault();
+            if (keyWithCorrectCapitalization == null)
+                throw new KeyNotFoundException(key);
+
             string resourceName = KeyToResourceName(keyWithCorrectCapitalization);
-            object resource = resourceSet.GetObject(resourceName);
-            return new MemoryStream((byte[])resource);
+            try
+            {
+                object resource = resourceSet.GetObject(resourceName);
+                return new MemoryStream((byte[])resource);
+            }
+            catch (System.Exception ex)
+            {
+                throw new StreamAccessException(key, ex);
+            }
         }
 
-        public virtual string ResourceNameToKey(string resourceName) => resourceName;
+        protected virtual string ResourceNameToKey(string resourceName) => resourceName;
 
-        public virtual string KeyToResourceName(string key) => key;
+        protected virtual string KeyToResourceName(string key) => key;
     }
 }

@@ -170,16 +170,31 @@ namespace ChaosFramework.IO.Containers
         DataType LoadFromStreamInternal(Key key)
         {
             if (!streamSource.ContainsKey(key.key))
-                throw new Exception($"Key no longer exists: \"{key.key}\".");
+                throw new KeyNotFoundException(
+                    key.key,
+                    new Exception($"Key no longer exists!")
+                    );
 
-            System.IO.Stream resource = streamSource.OpenRead(key.key);
+            using (System.IO.Stream resource = streamSource.OpenRead(key.key))
+            {
+                if (!resource.CanRead)
+                    throw new StreamAccessException(
+                        key.key,
+                        new Exception("Resource stream is unreadable. It was likely closed.")
+                        );
 
-            if (!resource.CanRead)
-                throw new Exception("Resource stream is unreadable. It was likely closed.");
+                DataType obj;
+                try
+                {
+                    obj = LoadFromStream(key, resource);
+                }
+                catch (Exception ex)
+                {
+                    throw new AssetLoadException<DataType>(key, ex);
+                }
 
-            DataType obj = LoadFromStream(key, resource);
-            resource.Dispose();
-            return obj;
+                return obj;
+            }
         }
 
         protected abstract DataType LoadFromStream(Key key, System.IO.Stream resource);

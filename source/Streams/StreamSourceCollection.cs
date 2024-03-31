@@ -1,3 +1,4 @@
+using ChaosUtil.Primitives;
 using System.Collections;
 using System.IO;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace ChaosFramework.IO.Streams
 
         public StreamSourceCollection(params StreamSource[] sources)
         {
-            this.sources = sources;
+            this.sources = sources ?? Array<StreamSource>.empty;
         }
 
         bool StreamSource.ContainsKey(string key)
@@ -26,7 +27,7 @@ namespace ChaosFramework.IO.Streams
                     return str;
             }
 
-            throw new System.Exception($"Could not find a stream for \"{key}\".");
+            throw new KeyNotFoundException(key, null);
         }
 
         SysCol.IEnumerable<string> StreamSource.EnumerateKeys()
