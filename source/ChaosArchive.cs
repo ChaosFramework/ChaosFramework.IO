@@ -166,7 +166,7 @@ namespace ChaosFramework.IO
             for (int i = 0; i < fileExtensions.Length; i++)
                 fileExtensions[i] = fileExtensions[i].ToLower();
 
-            foreach (string file in ((StreamSource)this).EnumerateKeys(glob))
+            foreach (string file in this.EnumerateKeys(glob))
                 foreach (string ext in fileExtensions)
                     if (file.EndsWith(ext))
                         yield return file;

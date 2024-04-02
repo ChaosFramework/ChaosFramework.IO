@@ -31,11 +31,11 @@ namespace ChaosFramework.IO.Streams.Sources
                select ResourceNameToKey((string)resource.Key);
 
         bool StreamSource.ContainsKey(string key)
-            => ((StreamSource)this).EnumerateKeys(key).NotEmpty();
+            => this.EnumerateKeys(key).NotEmpty();
 
         Stream StreamSource.OpenRead(string key)
         {
-            IEnumerable<string> keys = ((StreamSource)this).EnumerateKeys(key);
+            IEnumerable<string> keys = this.EnumerateKeys(key);
             string keyWithCorrectCapitalization = keys.FirstOrDefault();
             if (keyWithCorrectCapitalization == null)
                 throw new KeyNotFoundException(key);
