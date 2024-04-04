@@ -1,6 +1,6 @@
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class ParameterizedDataContainer<DataType, ParameterType>
+    public abstract partial class ParameterizedAssetContainer<AssetType, ParameterType>
     {
         [System.Diagnostics.DebuggerDisplay(nameof(key) + "={" + nameof(key) + "}, " + nameof(param) + "={" + nameof(param) + "}")]
         public class ParameterizedKey : Key

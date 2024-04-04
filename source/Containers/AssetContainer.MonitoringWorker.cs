@@ -4,20 +4,20 @@ using SysCol = System.Collections.Generic;
 
 namespace ChaosFramework.IO.Containers
 {
-    public partial class DataContainer<DataType>
+    public partial class AssetContainer<AssetType>
     {
         class MonitoringWorker : Disposable
         {
             const int COLLECTION_INTERVAL = 5000;
 
-            readonly DataContainer<DataType> parent;
+            readonly AssetContainer<AssetType> parent;
 
             readonly LinkedList<Key> disposals = new LinkedList<Key>();
             readonly System.ComponentModel.BackgroundWorker worker;
             readonly System.Threading.ManualResetEvent workerThreadDone;
             readonly System.Threading.ManualResetEvent workerInterruptRequested;
 
-            public MonitoringWorker(DataContainer<DataType> parent)
+            public MonitoringWorker(AssetContainer<AssetType> parent)
             {
                 this.parent = parent;
 

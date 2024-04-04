@@ -5,9 +5,9 @@ using SysCol = System.Collections.Generic;
 
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class DataContainer<DataType> : Disposable, SysCol.IEnumerable<DataContainer<DataType>.Entry>
+    public abstract partial class AssetContainer<AssetType> : Disposable, SysCol.IEnumerable<AssetContainer<AssetType>.Entry>
     {
-        public delegate DataType Factory();
+        public delegate AssetType Factory();
 
         public readonly StreamSource streamSource;
         public readonly bool backgroundLoading;
@@ -17,7 +17,7 @@ namespace ChaosFramework.IO.Containers
         readonly SysCol.Dictionary<Key, Entry> data = new SysCol.Dictionary<Key, Entry>();
         readonly SysCol.Dictionary<Key, Factory> custom = new SysCol.Dictionary<Key, Factory>();
 
-        DataType defaultValue;
+        AssetType defaultValue;
         Factory _defaultGenerator;
         public Factory defaultGenerator
         {
@@ -35,7 +35,7 @@ namespace ChaosFramework.IO.Containers
         public SysCol.IEnumerable<Entry> content => data.Values;
         public SysCol.IEnumerable<Key> keys => data.Keys;
 
-        public DataContainer(
+        public AssetContainer(
             StreamSource streamSource,
             bool monitoring,
             bool backgroundLoading = false,
@@ -167,7 +167,7 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
-        DataType LoadFromStreamInternal(Key key)
+        AssetType LoadFromStreamInternal(Key key)
         {
             if (!streamSource.ContainsKey(key.key))
                 throw new KeyNotFoundException(
@@ -183,21 +183,21 @@ namespace ChaosFramework.IO.Containers
                         new Exception("Resource stream is unreadable. It was likely closed.")
                         );
 
-                DataType obj;
+                AssetType obj;
                 try
                 {
                     obj = LoadFromStream(key, resource);
                 }
                 catch (Exception ex)
                 {
-                    throw new AssetLoadException<DataType>(key, ex);
+                    throw new AssetLoadException<AssetType>(key, ex);
                 }
 
                 return obj;
             }
         }
 
-        protected abstract DataType LoadFromStream(Key key, System.IO.Stream resource);
+        protected abstract AssetType LoadFromStream(Key key, System.IO.Stream resource);
 
         public virtual void Dispose(string key)
             => Dispose(GenerateKey(key));
@@ -215,7 +215,7 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
-        protected abstract void DisposeItem(DataType obj);
+        protected abstract void DisposeItem(AssetType obj);
 
         protected override void DoDispose()
         {

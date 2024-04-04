@@ -3,31 +3,31 @@ using ChaosFramework.Core;
 
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class DataContainer<DataType>
+    public abstract partial class AssetContainer<AssetType>
     {
         public sealed class Entry
         {
-            public delegate DataType LoadProcedure(Key key);
+            public delegate AssetType LoadProcedure(Key key);
 
-            public static Entry Mock(DataType content) => new Entry(null, content);
+            public static Entry Mock(AssetType content) => new Entry(null, content);
 
-            readonly DataContainer<DataType> parent;
+            readonly AssetContainer<AssetType> parent;
             public readonly Key key;
-            public DataType content { get; private set; }
+            public AssetType content { get; private set; }
 
             internal readonly AdvancedLinkedList<Disposable> myMonitors;
             internal LoadProcedure loadProcedure;
 
             bool monitoring => myMonitors != null;
 
-            Entry(Key key, DataType content)
+            Entry(Key key, AssetType content)
             {
                 this.key = key;
                 SetContent(content);
             }
 
             internal Entry(
-                DataContainer<DataType> parent,
+                AssetContainer<AssetType> parent,
                 Key key,
                 LoadProcedure loadProcedure,
                 Disposable monitor1,
@@ -67,7 +67,7 @@ namespace ChaosFramework.IO.Containers
                 }
             }
 
-            public void SetContent(DataType content) => this.content = content;
+            public void SetContent(AssetType content) => this.content = content;
 
             public void AddMonitors(Disposable monitor1, params Disposable[] monitors)
             {
@@ -91,8 +91,8 @@ namespace ChaosFramework.IO.Containers
                         myMonitors.Remove(obj);
             }
 
-            public static implicit operator DataType(Entry obj)
-                => obj == null ? default(DataType) : obj.content;
+            public static implicit operator AssetType(Entry obj)
+                => obj == null ? default(AssetType) : obj.content;
 
             public override string ToString()
                 => $"{GetType().Name}.Entry({key?.key ?? "<null>"})";

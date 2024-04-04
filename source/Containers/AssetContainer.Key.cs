@@ -1,6 +1,6 @@
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class DataContainer<DataType>
+    public abstract partial class AssetContainer<AssetType>
     {
         [System.Diagnostics.DebuggerDisplay(nameof(key) + "={" + nameof(key) + "}")]
         public class Key
