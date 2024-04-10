@@ -64,21 +64,22 @@ namespace ChaosFramework.IO.Containers
                     _content = new ChaosUtil.Primitives.Wrapper<AssetType>(loadProcedure(key, new CancellationToken()));
                 else
                 {
+                    CancellationToken myCancellation = new CancellationToken();
                     lock (cancelLock)
+                    {
                         _content = null;
-
-                    new System.Threading.Tasks.Task(LoadContent).Start();
+                        mostRecentLoad?.Cancel();
+                        mostRecentLoad = myCancellation;
+                    }
+                    new System.Threading.Tasks.Task(LoadContent, myCancellation).Start();
                 }
             }
 
-            void LoadContent()
+            void LoadContent(object state)
             {
-                CancellationToken myCancellation = new CancellationToken();
-                lock (cancelLock)
-                {
-                    mostRecentLoad?.Cancel();
-                    mostRecentLoad = myCancellation;
-                }
+                CancellationToken myCancellation = (CancellationToken)state;
+                if (myCancellation.canceled)
+                    return;
 
                 AssetType value = loadProcedure(key, myCancellation);
 
