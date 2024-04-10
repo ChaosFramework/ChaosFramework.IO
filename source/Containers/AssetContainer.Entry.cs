@@ -7,13 +7,19 @@ namespace ChaosFramework.IO.Containers
     {
         public sealed class Entry
         {
-            public delegate AssetType LoadProcedure(Key key);
+            object cancelLock = new object();
+            CancellationToken mostRecentLoad = null;
+
+            public delegate AssetType LoadProcedure(Key key, CancellationToken cancel);
 
             public static Entry Mock(AssetType content) => new Entry(null, content);
+            public static Entry Mock(LoadProcedure loadProcedure) => new Entry(null, loadProcedure);
 
             readonly AssetContainer<AssetType> parent;
             public readonly Key key;
-            public AssetType content { get; private set; }
+
+            ChaosUtil.Primitives.Wrapper<AssetType> _content = null;
+            public AssetType content => _content == null ? parent.defaultValue : _content.value;
 
             internal readonly AdvancedLinkedList<Disposable> myMonitors;
             internal LoadProcedure loadProcedure;
@@ -23,7 +29,14 @@ namespace ChaosFramework.IO.Containers
             Entry(Key key, AssetType content)
             {
                 this.key = key;
-                SetContent(content);
+                _content = new ChaosUtil.Primitives.Wrapper<AssetType>(content);
+            }
+
+            Entry(Key key, LoadProcedure loadProcedure)
+            {
+                this.key = key;
+                this.loadProcedure = loadProcedure;
+                Load();
             }
 
             internal Entry(
@@ -48,15 +61,36 @@ namespace ChaosFramework.IO.Containers
             internal void Load()
             {
                 if (parent == null || !parent.backgroundLoading)
-                    SetContent(loadProcedure(key));
+                    _content = new ChaosUtil.Primitives.Wrapper<AssetType>(loadProcedure(key, new CancellationToken()));
                 else
                 {
-                    SetContent(parent.defaultValue);
+                    lock (cancelLock)
+                        _content = null;
+
                     new System.Threading.Tasks.Task(LoadContent).Start();
                 }
             }
 
-            void LoadContent() => SetContent(loadProcedure(key));
+            void LoadContent()
+            {
+                CancellationToken myCancellation = new CancellationToken();
+                lock (cancelLock)
+                {
+                    mostRecentLoad?.Cancel();
+                    mostRecentLoad = myCancellation;
+                }
+
+                AssetType value = loadProcedure(key, myCancellation);
+
+                if (myCancellation.canceled)
+                {
+                    if (value != null)
+                        parent.DisposeItem(value);
+                }
+                else
+                    lock (cancelLock)
+                        _content = new ChaosUtil.Primitives.Wrapper<AssetType>(value);
+            }
 
             public void RefreshContent()
             {
@@ -66,8 +100,6 @@ namespace ChaosFramework.IO.Containers
                     Load();
                 }
             }
-
-            public void SetContent(AssetType content) => this.content = content;
 
             public void AddMonitors(Disposable monitor1, params Disposable[] monitors)
             {

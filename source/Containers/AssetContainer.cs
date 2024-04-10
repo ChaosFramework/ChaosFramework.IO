@@ -7,7 +7,14 @@ namespace ChaosFramework.IO.Containers
 {
     public abstract partial class AssetContainer<AssetType> : Disposable, SysCol.IEnumerable<AssetContainer<AssetType>.Entry>
     {
-        public delegate AssetType Factory();
+        public class CancellationToken
+        {
+            volatile bool _canceled = false;
+            public bool canceled => _canceled;
+            public void Cancel() => _canceled = true;
+        }
+
+        public delegate AssetType Factory(CancellationToken cancel);
 
         public readonly StreamSource streamSource;
         public readonly bool backgroundLoading;
@@ -17,18 +24,15 @@ namespace ChaosFramework.IO.Containers
         readonly SysCol.Dictionary<Key, Entry> data = new SysCol.Dictionary<Key, Entry>();
         readonly SysCol.Dictionary<Key, Factory> custom = new SysCol.Dictionary<Key, Factory>();
 
-        AssetType defaultValue;
+        readonly Entry defaultValue;
         Factory _defaultGenerator;
         public Factory defaultGenerator
         {
             get { return _defaultGenerator; }
             set
             {
-                if (defaultValue != null)
-                    DisposeItem(defaultValue);
                 _defaultGenerator = value;
-                if (value != null)
-                    defaultValue = value();
+                defaultValue.RefreshContent();
             }
         }
 
@@ -42,6 +46,7 @@ namespace ChaosFramework.IO.Containers
             Factory defaultGenerator = null
             )
         {
+            defaultValue = Entry.Mock(GenerateDefault);
             this.streamSource = streamSource;
             this.backgroundLoading = backgroundLoading;
             this.defaultGenerator = defaultGenerator;
@@ -51,6 +56,9 @@ namespace ChaosFramework.IO.Containers
 
         public bool ContainsKey(Key key) => data.ContainsKey(key);
         public bool ContainsKey(string key) => ContainsKey(GenerateKey(key));
+
+        AssetType GenerateDefault(Key key, CancellationToken cancel)
+            => _defaultGenerator == null ? default(AssetType) : _defaultGenerator(null);
 
         protected virtual Key GenerateKey(string path) => new Key(path);
 
@@ -99,7 +107,7 @@ namespace ChaosFramework.IO.Containers
                 {
                     Factory factory;
                     if (custom.TryGetValue(key, out factory))
-                        returnVal = new Entry(this, key, _ => factory(), monitor1, monitors);
+                        returnVal = new Entry(this, key, (_, cancel) => factory(cancel), monitor1, monitors);
                     else if (streamSource.ContainsKey(key.key))
                         returnVal = new Entry(this, key, LoadFromStreamInternal, monitor1, monitors);
                     else
@@ -144,17 +152,10 @@ namespace ChaosFramework.IO.Containers
             lock (data)
             {
                 DisposeItem(defaultValue);
-                if (defaultGenerator != null)
-                    defaultValue = defaultGenerator();
+                defaultValue?.RefreshContent();
 
                 foreach (SysCol.KeyValuePair<Key, Entry> pair in data)
-                    // TODO: Is that really a good idea?
-                    //       We've literally just reassigned the default value to a potentially new instance.
-                    //       Plus: What if we're currently loading this in background and that's why it's default?
-                    //       Shouldn't we then abort the current loading process and restart it?
-                    //       Better than aborting is probably letting it finish and dispose the result.
-                    if (!ReferenceEquals(pair.Value.content, defaultValue))
-                        pair.Value.RefreshContent();
+                    pair.Value.RefreshContent();
             }
         }
 
@@ -167,7 +168,7 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
-        AssetType LoadFromStreamInternal(Key key)
+        AssetType LoadFromStreamInternal(Key key, CancellationToken cancel)
         {
             if (!streamSource.ContainsKey(key.key))
                 throw new KeyNotFoundException(
@@ -186,7 +187,7 @@ namespace ChaosFramework.IO.Containers
                 AssetType obj;
                 try
                 {
-                    obj = LoadFromStream(key, resource);
+                    obj = LoadFromStream(key, resource, cancel);
                 }
                 catch (Exception ex)
                 {
@@ -197,7 +198,7 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
-        protected abstract AssetType LoadFromStream(Key key, System.IO.Stream resource);
+        protected abstract AssetType LoadFromStream(Key key, System.IO.Stream resource, CancellationToken cancel);
 
         public virtual void Dispose(string key)
             => Dispose(GenerateKey(key));
@@ -224,9 +225,7 @@ namespace ChaosFramework.IO.Containers
 
             lock (data)
             {
-                if (defaultValue != null)
-                    DisposeItem(defaultValue);
-                defaultValue = default(Entry);
+                DisposeItem(defaultValue);
 
                 foreach (SysCol.KeyValuePair<Key, Entry> pair in data)
                     DisposeItem(pair.Value.content);
