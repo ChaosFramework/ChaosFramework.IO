@@ -10,6 +10,23 @@ namespace ChaosFramework.IO.Containers
             object cancelLock = new object();
             CancellationToken mostRecentLoad = null;
 
+            /// <summary>
+            ///     A delegate representing the load procedure for <typeparamref name="AssetType"/>.
+            ///     Can be cancelled with the provided <see cref="CancellationToken"/>.
+            ///     If cancelled, this function must return either a <typeparamref name="AssetType"/>
+            ///     that can safely be disposed with <see cref="AssetContainer{AssetType}.Dispose(Key)"/>
+            ///     or <see langword="default"/>(<typeparamref name="AssetType"/>) in which case
+            ///     <see cref="AssetContainer{AssetType}.Dispose(Key)"/> is not called.
+            /// </summary>
+            /// <param name="key"> The key to retrieve an asset for. </param>
+            /// <param name="cancel">
+            ///     The <see cref="CancellationToken"/> to be used for cancellation.
+            ///     If <see langword="null"/> the <see cref="LoadProcedure"/> cannot be cancelled.
+            /// </param>
+            /// <returns>
+            ///     A valid <typeparamref name="AssetType"/> if the load procedure was not cancelled.
+            ///     <see langword="null"/> or a safely disposable <typeparamref name="AssetType"/> otherwise.
+            /// </returns>
             public delegate AssetType LoadProcedure(Key key, CancellationToken cancel);
 
             public static Entry Mock(AssetType content) => new Entry(null, content);
