@@ -61,7 +61,7 @@ namespace ChaosFramework.IO.Containers
             internal void Load()
             {
                 if (parent == null || !parent.backgroundLoading)
-                    _content = new ChaosUtil.Primitives.Wrapper<AssetType>(loadProcedure(key, new CancellationToken()));
+                    _content = new ChaosUtil.Primitives.Wrapper<AssetType>(loadProcedure(key, null));
                 else
                 {
                     CancellationToken myCancellation = new CancellationToken();
