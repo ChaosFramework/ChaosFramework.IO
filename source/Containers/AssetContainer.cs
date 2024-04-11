@@ -14,6 +14,22 @@ namespace ChaosFramework.IO.Containers
             public void Cancel() => _canceled = true;
         }
 
+        /// <summary>
+        ///     A delegate representing a factory for <typeparamref name="AssetType"/>.
+        ///     Can be cancelled with the provided <see cref="CancellationToken"/>.
+        ///     If cancelled, this function must return either a <typeparamref name="AssetType"/>
+        ///     that can safely be disposed with <see cref="AssetContainer{AssetType}.Dispose(Key)"/>
+        ///     or <see langword="default"/>(<typeparamref name="AssetType"/>) in which case
+        ///     <see cref="AssetContainer{AssetType}.Dispose(Key)"/> is not called.
+        /// </summary>
+        /// <param name="cancel">
+        ///     The <see cref="CancellationToken"/> to be used for cancellation.
+        ///     If <see langword="null"/> the <see cref="Factory"/> cannot be cancelled.
+        /// </param>
+        /// <returns>
+        ///     A valid <typeparamref name="AssetType"/> if the factory was not cancelled.
+        ///     <see langword="null"/> or a safely disposable <typeparamref name="AssetType"/> otherwise.
+        /// </returns>
         public delegate AssetType Factory(CancellationToken cancel);
 
         public readonly StreamSource streamSource;
