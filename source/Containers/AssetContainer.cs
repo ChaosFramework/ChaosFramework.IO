@@ -225,6 +225,25 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
+
+        /// <summary>
+        ///     Loads a <typeparamref name="AssetType"/> from the provided <paramref name="resource"/> stream.
+        ///     Can be cancelled with the provided <see cref="CancellationToken"/>.
+        ///     If cancelled, this function must return either a <typeparamref name="AssetType"/>
+        ///     that can safely be disposed with <see cref="AssetContainer{AssetType}.Dispose(Key)"/>
+        ///     or <see langword="default"/>(<typeparamref name="AssetType"/>) in which case
+        ///     <see cref="AssetContainer{AssetType}.Dispose(Key)"/> is not called.
+        /// </summary>
+        /// <param name="key"> The key to retrieve the asset for. </param>
+        /// <param name="resource"> The stream to load the asset from. </param>
+        /// <param name="cancel">
+        ///     The <see cref="CancellationToken"/> to be used for cancellation.
+        ///     If <see langword="null"/> the load procedure cannot be cancelled.
+        /// </param>
+        /// <returns>
+        ///     A valid <typeparamref name="AssetType"/> if the load procedure was not cancelled.
+        ///     <see langword="null"/> or a safely disposable <typeparamref name="AssetType"/> otherwise.
+        /// </returns>
         protected abstract AssetType LoadFromStream(Key key, System.IO.Stream resource, CancellationToken cancel);
 
         public virtual void Dispose(string key)
