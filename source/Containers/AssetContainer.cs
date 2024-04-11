@@ -21,7 +21,7 @@ namespace ChaosFramework.IO.Containers
 
         readonly MonitoringWorker monitoringWorker;
 
-        readonly SysCol.Dictionary<Key, Entry> data = new SysCol.Dictionary<Key, Entry>();
+        readonly SysCol.Dictionary<Key, Entry> entries = new SysCol.Dictionary<Key, Entry>();
         readonly SysCol.Dictionary<Key, Factory> factories = new SysCol.Dictionary<Key, Factory>();
 
         readonly Entry defaultValue;
@@ -36,8 +36,8 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
-        public SysCol.IEnumerable<Entry> content => data.Values;
-        public SysCol.IEnumerable<Key> keys => data.Keys;
+        public SysCol.IEnumerable<Entry> content => entries.Values;
+        public SysCol.IEnumerable<Key> keys => entries.Keys;
 
         public AssetContainer(
             StreamSource streamSource,
@@ -54,7 +54,7 @@ namespace ChaosFramework.IO.Containers
                 monitoringWorker = new MonitoringWorker(this);
         }
 
-        public bool ContainsKey(Key key) => data.ContainsKey(key);
+        public bool ContainsKey(Key key) => entries.ContainsKey(key);
         public bool ContainsKey(string key) => ContainsKey(GenerateKey(key));
 
         AssetType GenerateDefault(Key key, CancellationToken cancel)
@@ -95,9 +95,9 @@ namespace ChaosFramework.IO.Containers
 
         protected bool TryLoad(Key key, out Entry returnVal, Disposable monitor1, params Disposable[] monitors)
         {
-            lock (data)
+            lock (entries)
             {
-                if (data.TryGetValue(key, out returnVal))
+                if (entries.TryGetValue(key, out returnVal))
                 {
                     returnVal.AddMonitors(monitor1, monitors);
                     return true;
@@ -112,7 +112,7 @@ namespace ChaosFramework.IO.Containers
                     else
                         return false;
 
-                    data.Add(key, returnVal);
+                    entries.Add(key, returnVal);
                 }
                 catch (Exception ex)
                 {
@@ -148,22 +148,22 @@ namespace ChaosFramework.IO.Containers
 
         public virtual void RefreshContent()
         {
-            lock (data)
+            lock (entries)
             {
                 DisposeItem(defaultValue);
                 defaultValue?.RefreshContent();
 
-                foreach (SysCol.KeyValuePair<Key, Entry> pair in data)
+                foreach (SysCol.KeyValuePair<Key, Entry> pair in entries)
                     pair.Value.RefreshContent();
             }
         }
 
         void RemoveEntry(Key key)
         {
-            lock (data)
+            lock (entries)
             {
-                DisposeItem(data[key].content);
-                data.Remove(key);
+                DisposeItem(entries[key].content);
+                entries.Remove(key);
             }
         }
 
@@ -216,13 +216,13 @@ namespace ChaosFramework.IO.Containers
 
         public void Dispose(Key key)
         {
-            if (data.ContainsKey(key))
+            if (entries.ContainsKey(key))
             {
                 Entry entry;
-                if (data.TryGetValue(key, out entry))
+                if (entries.TryGetValue(key, out entry))
                 {
                     DisposeItem(entry);
-                    data.Remove(key);
+                    entries.Remove(key);
                 }
             }
         }
@@ -234,27 +234,27 @@ namespace ChaosFramework.IO.Containers
             monitoringWorker?.Dispose();
             base.DoDispose();
 
-            lock (data)
+            lock (entries)
             {
                 DisposeItem(defaultValue);
 
-                foreach (SysCol.KeyValuePair<Key, Entry> pair in data)
+                foreach (SysCol.KeyValuePair<Key, Entry> pair in entries)
                     DisposeItem(pair.Value.content);
 
-                data.Clear();
+                entries.Clear();
                 factories.Clear();
             }
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            foreach (SysCol.KeyValuePair<Key, Entry> kvp in data)
+            foreach (SysCol.KeyValuePair<Key, Entry> kvp in entries)
                 yield return kvp.Value;
         }
 
         SysCol.IEnumerator<Entry> SysCol.IEnumerable<Entry>.GetEnumerator()
         {
-            foreach (SysCol.KeyValuePair<Key, Entry> kvp in data)
+            foreach (SysCol.KeyValuePair<Key, Entry> kvp in entries)
                 yield return kvp.Value;
         }
     }

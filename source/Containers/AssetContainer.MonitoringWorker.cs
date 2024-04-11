@@ -45,8 +45,8 @@ namespace ChaosFramework.IO.Containers
             {
                 LinkedList<Key> tmpDisposals = new LinkedList<Key>();
 
-                lock (parent.data)
-                    foreach (SysCol.KeyValuePair<Key, Entry> dataPair in parent.data)
+                lock (parent.entries)
+                    foreach (SysCol.KeyValuePair<Key, Entry> dataPair in parent.entries)
                     {
                         foreach (Disposable monitor in dataPair.Value.myMonitors)
                             if (monitor.disposed)
@@ -72,7 +72,7 @@ namespace ChaosFramework.IO.Containers
                 {
                     foreach (Key key in disposals)
                     {
-                        if (!parent.data[key].myMonitors.empty)
+                        if (!parent.entries[key].myMonitors.empty)
                             continue;
 
                         System.Diagnostics.Debug.WriteLine($"{parent.GetType().Name}: disposing \"{key.key}\"");
