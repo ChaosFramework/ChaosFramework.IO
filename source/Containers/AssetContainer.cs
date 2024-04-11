@@ -22,7 +22,7 @@ namespace ChaosFramework.IO.Containers
         readonly MonitoringWorker monitoringWorker;
 
         readonly SysCol.Dictionary<Key, Entry> data = new SysCol.Dictionary<Key, Entry>();
-        readonly SysCol.Dictionary<Key, Factory> custom = new SysCol.Dictionary<Key, Factory>();
+        readonly SysCol.Dictionary<Key, Factory> factories = new SysCol.Dictionary<Key, Factory>();
 
         readonly Entry defaultValue;
         Factory _defaultGenerator;
@@ -105,7 +105,7 @@ namespace ChaosFramework.IO.Containers
 
                 try
                 {
-                    if (custom.ContainsKey(key))
+                    if (factories.ContainsKey(key))
                         returnVal = new Entry(this, key, LoadFromFactory, monitor1, monitors);
                     else if (streamSource.ContainsKey(key.key))
                         returnVal = new Entry(this, key, LoadFromStreamInternal, monitor1, monitors);
@@ -135,15 +135,15 @@ namespace ChaosFramework.IO.Containers
             return result;
         }
 
-        public virtual void AddCustom(string key, Factory factory)
-            => AddCustom(GenerateKey(key), factory);
+        public virtual void AddFactory(string key, Factory factory)
+            => AddFactory(GenerateKey(key), factory);
 
-        protected void AddCustom(Key key, Factory factory)
+        protected void AddFactory(Key key, Factory factory)
         {
-            if (ContainsKey(key) || custom.ContainsKey(key))
-                throw new InvalidOperationException($"{GetType().Name} already contains custom entry \"{key.key}\".");
+            if (ContainsKey(key) || factories.ContainsKey(key))
+                throw new InvalidOperationException($"{GetType().Name} already contains a factory for \"{key.key}\".");
 
-            custom[key] = factory;
+            factories[key] = factory;
         }
 
         public virtual void RefreshContent()
@@ -170,7 +170,7 @@ namespace ChaosFramework.IO.Containers
         AssetType LoadFromFactory(Key key, CancellationToken cancel)
         {
             Factory factory;
-            if (!custom.TryGetValue(key, out factory))
+            if (!factories.TryGetValue(key, out factory))
                 throw new KeyNotFoundException(
                     key.key,
                     new Exception($"Key no longer exists!")
@@ -242,7 +242,7 @@ namespace ChaosFramework.IO.Containers
                     DisposeItem(pair.Value.content);
 
                 data.Clear();
-                custom.Clear();
+                factories.Clear();
             }
         }
 
