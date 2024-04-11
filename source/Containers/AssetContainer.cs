@@ -105,9 +105,8 @@ namespace ChaosFramework.IO.Containers
 
                 try
                 {
-                    Factory factory;
-                    if (custom.TryGetValue(key, out factory))
-                        returnVal = new Entry(this, key, (_, cancel) => factory(cancel), monitor1, monitors);
+                    if (custom.ContainsKey(key))
+                        returnVal = new Entry(this, key, LoadFromFactory, monitor1, monitors);
                     else if (streamSource.ContainsKey(key.key))
                         returnVal = new Entry(this, key, LoadFromStreamInternal, monitor1, monitors);
                     else
@@ -166,6 +165,18 @@ namespace ChaosFramework.IO.Containers
                 DisposeItem(data[key].content);
                 data.Remove(key);
             }
+        }
+
+        AssetType LoadFromFactory(Key key, CancellationToken cancel)
+        {
+            Factory factory;
+            if (!custom.TryGetValue(key, out factory))
+                throw new KeyNotFoundException(
+                    key.key,
+                    new Exception($"Key no longer exists!")
+                    );
+
+            return factory(cancel);
         }
 
         AssetType LoadFromStreamInternal(Key key, CancellationToken cancel)
