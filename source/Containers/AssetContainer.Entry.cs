@@ -7,7 +7,7 @@ namespace ChaosFramework.IO.Containers
     {
         public sealed class Entry
         {
-            object cancelLock = new object();
+            object contentLock = new object();
             CancellationToken mostRecentLoad = null;
 
             /// <summary>
@@ -81,32 +81,32 @@ namespace ChaosFramework.IO.Containers
                     _content = new ChaosUtil.Primitives.Wrapper<AssetType>(loadProcedure(key, null));
                 else
                 {
-                    CancellationToken myCancellation = new CancellationToken();
-                    lock (cancelLock)
+                    CancellationToken cancel = new CancellationToken();
+                    lock (contentLock)
                     {
                         _content = null;
                         mostRecentLoad?.Cancel();
-                        mostRecentLoad = myCancellation;
+                        mostRecentLoad = cancel;
                     }
-                    new System.Threading.Tasks.Task(LoadContent, myCancellation).Start();
+                    new System.Threading.Tasks.Task(LoadContent, cancel).Start();
                 }
             }
 
             void LoadContent(object state)
             {
-                CancellationToken myCancellation = (CancellationToken)state;
-                if (myCancellation.canceled)
+                CancellationToken cancel = (CancellationToken)state;
+                if (cancel.canceled)
                     return;
 
-                AssetType value = loadProcedure(key, myCancellation);
+                AssetType value = loadProcedure(key, cancel);
 
-                if (myCancellation.canceled)
+                if (cancel.canceled)
                 {
                     if (value != null)
                         parent.DisposeItem(value);
                 }
                 else
-                    lock (cancelLock)
+                    lock (contentLock)
                         _content = new ChaosUtil.Primitives.Wrapper<AssetType>(value);
             }
 
