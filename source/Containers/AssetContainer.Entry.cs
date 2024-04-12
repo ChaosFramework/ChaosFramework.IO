@@ -14,9 +14,9 @@ namespace ChaosFramework.IO.Containers
             ///     A delegate representing the load procedure for <typeparamref name="AssetType"/>.
             ///     Can be cancelled with the provided <see cref="CancellationToken"/>.
             ///     If cancelled, this function must return either a <typeparamref name="AssetType"/>
-            ///     that can safely be disposed with <see cref="AssetContainer{AssetType}.Dispose(Key)"/>
+            ///     that can safely be disposed with <see cref="AssetContainer{AssetType}.DisposeItem(AssetType)"/>
             ///     or <see langword="default"/>(<typeparamref name="AssetType"/>) in which case
-            ///     <see cref="AssetContainer{AssetType}.Dispose(Key)"/> is not called.
+            ///     <see cref="AssetContainer{AssetType}.DisposeItem(AssetType)"/> is not called.
             /// </summary>
             /// <param name="key"> The key to retrieve an asset for. </param>
             /// <param name="cancel">
