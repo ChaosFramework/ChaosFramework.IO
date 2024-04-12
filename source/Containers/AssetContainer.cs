@@ -16,18 +16,18 @@ namespace ChaosFramework.IO.Containers
 
         /// <summary>
         ///     A delegate representing a factory for <typeparamref name="AssetType"/>.
-        ///     Can be cancelled with the provided <see cref="CancellationToken"/>.
-        ///     If cancelled, this function must return either a <typeparamref name="AssetType"/>
+        ///     Can be canceled with the provided <see cref="CancellationToken"/>.
+        ///     If canceled, this function must return either a <typeparamref name="AssetType"/>
         ///     that can safely be disposed with <see cref="AssetContainer{AssetType}.DisposeItem(AssetType)"/>
         ///     or <see langword="default"/>(<typeparamref name="AssetType"/>) in which case
         ///     <see cref="AssetContainer{AssetType}.DisposeItem(AssetType)"/> is not called.
         /// </summary>
         /// <param name="cancel">
         ///     The <see cref="CancellationToken"/> to be used for cancellation.
-        ///     If <see langword="null"/> the <see cref="Factory"/> cannot be cancelled.
+        ///     If <see langword="null"/> the <see cref="Factory"/> cannot be canceled.
         /// </param>
         /// <returns>
-        ///     A valid <typeparamref name="AssetType"/> if the factory was not cancelled.
+        ///     A valid <typeparamref name="AssetType"/> if the factory was not canceled.
         ///     <see langword="null"/> or a safely disposable <typeparamref name="AssetType"/> otherwise.
         /// </returns>
         public delegate AssetType Factory(CancellationToken cancel);
@@ -228,8 +228,8 @@ namespace ChaosFramework.IO.Containers
 
         /// <summary>
         ///     Loads a <typeparamref name="AssetType"/> from the provided <paramref name="resource"/> stream.
-        ///     Can be cancelled with the provided <see cref="CancellationToken"/>.
-        ///     If cancelled, this function must return either a <typeparamref name="AssetType"/>
+        ///     Can be canceled with the provided <see cref="CancellationToken"/>.
+        ///     If canceled, this function must return either a <typeparamref name="AssetType"/>
         ///     that can safely be disposed with <see cref="AssetContainer{AssetType}.DisposeItem(AssetType)"/>
         ///     or <see langword="default"/>(<typeparamref name="AssetType"/>) in which case
         ///     <see cref="AssetContainer{AssetType}.DisposeItem(AssetType)"/> is not called.
@@ -238,10 +238,10 @@ namespace ChaosFramework.IO.Containers
         /// <param name="resource"> The stream to load the asset from. </param>
         /// <param name="cancel">
         ///     The <see cref="CancellationToken"/> to be used for cancellation.
-        ///     If <see langword="null"/> the load procedure cannot be cancelled.
+        ///     If <see langword="null"/> the load procedure cannot be canceled.
         /// </param>
         /// <returns>
-        ///     A valid <typeparamref name="AssetType"/> if the load procedure was not cancelled.
+        ///     A valid <typeparamref name="AssetType"/> if the load procedure was not canceled.
         ///     <see langword="null"/> or a safely disposable <typeparamref name="AssetType"/> otherwise.
         /// </returns>
         protected abstract AssetType LoadFromStream(Key key, System.IO.Stream resource, CancellationToken cancel);

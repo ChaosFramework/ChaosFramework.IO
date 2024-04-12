@@ -12,8 +12,8 @@ namespace ChaosFramework.IO.Containers
 
             /// <summary>
             ///     A delegate representing the load procedure for <typeparamref name="AssetType"/>.
-            ///     Can be cancelled with the provided <see cref="CancellationToken"/>.
-            ///     If cancelled, this function must return either a <typeparamref name="AssetType"/>
+            ///     Can be canceled with the provided <see cref="CancellationToken"/>.
+            ///     If canceled, this function must return either a <typeparamref name="AssetType"/>
             ///     that can safely be disposed with <see cref="AssetContainer{AssetType}.DisposeItem(AssetType)"/>
             ///     or <see langword="default"/>(<typeparamref name="AssetType"/>) in which case
             ///     <see cref="AssetContainer{AssetType}.DisposeItem(AssetType)"/> is not called.
@@ -21,10 +21,10 @@ namespace ChaosFramework.IO.Containers
             /// <param name="key"> The key to retrieve an asset for. </param>
             /// <param name="cancel">
             ///     The <see cref="CancellationToken"/> to be used for cancellation.
-            ///     If <see langword="null"/> the <see cref="LoadProcedure"/> cannot be cancelled.
+            ///     If <see langword="null"/> the <see cref="LoadProcedure"/> cannot be canceled.
             /// </param>
             /// <returns>
-            ///     A valid <typeparamref name="AssetType"/> if the load procedure was not cancelled.
+            ///     A valid <typeparamref name="AssetType"/> if the load procedure was not canceled.
             ///     <see langword="null"/> or a safely disposable <typeparamref name="AssetType"/> otherwise.
             /// </returns>
             public delegate AssetType LoadProcedure(Key key, CancellationToken cancel);
