@@ -225,7 +225,6 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
-
         /// <summary>
         ///     Loads a <typeparamref name="AssetType"/> from the provided <paramref name="resource"/> stream.
         ///     Can be canceled with the provided <see cref="CancellationToken"/>.
