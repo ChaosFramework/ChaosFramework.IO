@@ -48,11 +48,11 @@ namespace ChaosFramework.IO.Containers
                 lock (parent.entries)
                     foreach (SysCol.KeyValuePair<Key, Entry> dataPair in parent.entries)
                     {
-                        foreach (Disposable monitor in dataPair.Value.myMonitors)
+                        foreach (Disposable monitor in dataPair.Value.monitors)
                             if (monitor.disposed)
-                                dataPair.Value.myMonitors.RemoveCurrent();
+                                dataPair.Value.monitors.RemoveCurrent();
 
-                        if (dataPair.Value.myMonitors.empty)
+                        if (dataPair.Value.monitors.empty)
                             tmpDisposals.Add(dataPair.Key);
                     }
 
@@ -72,7 +72,7 @@ namespace ChaosFramework.IO.Containers
                 {
                     foreach (Key key in disposals)
                     {
-                        if (!parent.entries[key].myMonitors.empty)
+                        if (!parent.entries[key].monitors.empty)
                             continue;
 
                         System.Diagnostics.Debug.WriteLine($"{parent.GetType().Name}: disposing \"{key.key}\"");

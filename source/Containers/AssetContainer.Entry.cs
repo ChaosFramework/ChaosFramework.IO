@@ -38,10 +38,10 @@ namespace ChaosFramework.IO.Containers
             ChaosUtil.Primitives.Wrapper<AssetType> _content = null;
             public AssetType content => _content == null ? parent.defaultValue : _content.value;
 
-            internal readonly AdvancedLinkedList<Disposable> myMonitors;
+            internal readonly AdvancedLinkedList<Disposable> monitors;
             internal LoadProcedure loadProcedure;
 
-            bool monitoring => myMonitors != null;
+            bool monitoring => monitors != null;
 
             Entry(Key key, AssetType content)
             {
@@ -70,7 +70,7 @@ namespace ChaosFramework.IO.Containers
                 Load();
 
                 if (parent.monitoringWorker != null)
-                    myMonitors = new AdvancedLinkedList<Disposable>();
+                    this.monitors = new AdvancedLinkedList<Disposable>();
 
                 AddMonitors(monitor1, monitors);
             }
@@ -126,11 +126,11 @@ namespace ChaosFramework.IO.Containers
 
                 if (monitoring)
                 {
-                    myMonitors.AddUnique(monitor1);
+                    this.monitors.AddUnique(monitor1);
 
                     foreach (Disposable obj in monitors)
                         if (obj != null)
-                            myMonitors.AddUnique(obj);
+                            this.monitors.AddUnique(obj);
                 }
             }
 
@@ -138,7 +138,7 @@ namespace ChaosFramework.IO.Containers
             {
                 if (monitoring)
                     foreach (Disposable obj in monitors)
-                        myMonitors.Remove(obj);
+                        this.monitors.Remove(obj);
             }
 
             public static implicit operator AssetType(Entry obj)
