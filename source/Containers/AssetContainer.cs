@@ -62,10 +62,10 @@ namespace ChaosFramework.IO.Containers
             Factory defaultGenerator = null
             )
         {
-            defaultValue = Entry.Mock(GenerateDefault);
+            _defaultGenerator = defaultGenerator;
             this.streamSource = streamSource;
             this.backgroundLoading = backgroundLoading;
-            this.defaultGenerator = defaultGenerator;
+            defaultValue = Entry.Mock(GenerateDefault);
             if (monitoring)
                 monitoringWorker = new MonitoringWorker(this);
         }
@@ -167,7 +167,7 @@ namespace ChaosFramework.IO.Containers
             lock (entries)
             {
                 DisposeItem(defaultValue);
-                defaultValue?.RefreshContent();
+                defaultValue?.Load();
 
                 foreach (SysCol.KeyValuePair<Key, Entry> pair in entries)
                     pair.Value.RefreshContent();
