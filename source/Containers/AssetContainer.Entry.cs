@@ -110,11 +110,23 @@ namespace ChaosFramework.IO.Containers
                         _content = new ChaosUtil.Primitives.Wrapper<AssetType>(value);
             }
 
+            internal void DisposeContent()
+            {
+                lock (contentLock)
+                {
+                    if (_content != null)
+                    {
+                        parent.DisposeItem(_content);
+                        _content = null;
+                    }
+                }
+            }
+
             public void RefreshContent()
             {
                 if (parent != null)
                 {
-                    parent.DisposeItem(this);
+                    DisposeContent();
                     Load();
                 }
             }

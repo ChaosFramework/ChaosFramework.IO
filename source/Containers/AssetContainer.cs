@@ -48,7 +48,9 @@ namespace ChaosFramework.IO.Containers
             set
             {
                 _defaultGenerator = value;
-                defaultValue.RefreshContent();
+                if (defaultValue.content != null)
+                    DisposeItem(defaultValue.content);
+                defaultValue.Load();
             }
         }
 
@@ -166,8 +168,9 @@ namespace ChaosFramework.IO.Containers
         {
             lock (entries)
             {
-                DisposeItem(defaultValue);
-                defaultValue?.Load();
+                if (defaultValue.content != null)
+                    DisposeItem(defaultValue.content);
+                defaultValue.Load();
 
                 foreach (SysCol.KeyValuePair<Key, Entry> pair in entries)
                     pair.Value.RefreshContent();
@@ -178,8 +181,9 @@ namespace ChaosFramework.IO.Containers
         {
             lock (entries)
             {
-                DisposeItem(entries[key].content);
+                Entry entry = entries[key];
                 entries.Remove(key);
+                entry.DisposeContent();
             }
         }
 
@@ -255,8 +259,8 @@ namespace ChaosFramework.IO.Containers
                 Entry entry;
                 if (entries.TryGetValue(key, out entry))
                 {
-                    DisposeItem(entry);
                     entries.Remove(key);
+                    entry.DisposeContent();
                 }
             }
         }
@@ -270,10 +274,11 @@ namespace ChaosFramework.IO.Containers
 
             lock (entries)
             {
-                DisposeItem(defaultValue);
+                if (defaultValue.content != null)
+                    DisposeItem(defaultValue.content);
 
                 foreach (SysCol.KeyValuePair<Key, Entry> pair in entries)
-                    DisposeItem(pair.Value.content);
+                    pair.Value.DisposeContent();
 
                 entries.Clear();
                 factories.Clear();
