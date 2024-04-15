@@ -3,6 +3,7 @@ using System;
 namespace ChaosFramework.IO.Containers
 {
     public class AssetLoadException<T> : Exception
+        where T : class
     {
         public readonly AssetContainer<T>.Key key;
 

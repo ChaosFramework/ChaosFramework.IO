@@ -3,6 +3,7 @@ using ChaosFramework.Core;
 namespace ChaosFramework.IO.Containers
 {
     public abstract partial class ParameterizedAssetContainer<AssetType, ParameterType> : AssetContainer<AssetType>
+        where AssetType : class
     {
         public virtual ParameterType defaultParameter { get; protected set; } = default(ParameterType);
 

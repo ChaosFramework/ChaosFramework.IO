@@ -7,6 +7,18 @@ namespace ChaosFramework.IO.Containers
     {
         public sealed class Entry
         {
+            internal class LoadKillPair
+            {
+                public readonly LoadProcedure load;
+                public readonly KillProcedure kill;
+
+                public LoadKillPair(LoadProcedure load, KillProcedure kill)
+                {
+                    if ((this.load = load) == null) throw new System.ArgumentNullException(nameof(load));
+                    if ((this.kill = kill) == null) throw new System.ArgumentNullException(nameof(kill));
+                }
+            }
+
             object contentLock = new object();
             CancellationToken mostRecentLoad = null;
 
@@ -29,8 +41,9 @@ namespace ChaosFramework.IO.Containers
             /// </returns>
             public delegate AssetType LoadProcedure(Key key, CancellationToken cancel);
 
-            public static Entry Mock(AssetType content) => new Entry(null, content);
-            public static Entry Mock(LoadProcedure loadProcedure) => new Entry(null, loadProcedure);
+            public delegate void KillProcedure(AssetType content);
+
+            public static Entry Mock(LoadProcedure load, KillProcedure kill) => new Entry(new LoadKillPair(load, kill));
 
             readonly AssetContainer<AssetType> parent;
             public readonly Key key;
@@ -39,34 +52,27 @@ namespace ChaosFramework.IO.Containers
             public AssetType content => _content == null ? parent.defaultValue : _content.value;
 
             internal readonly AdvancedLinkedList<Disposable> monitors;
-            internal LoadProcedure loadProcedure;
+            readonly LoadKillPair loadKill;
 
             bool monitoring => monitors != null;
 
-            Entry(Key key, AssetType content)
+            Entry(LoadKillPair loadKill)
             {
-                this.key = key;
-                _content = new ChaosUtil.Primitives.Wrapper<AssetType>(content);
-            }
-
-            Entry(Key key, LoadProcedure loadProcedure)
-            {
-                this.key = key;
-                this.loadProcedure = loadProcedure;
+                this.loadKill = loadKill;
                 Load();
             }
 
             internal Entry(
                 AssetContainer<AssetType> parent,
                 Key key,
-                LoadProcedure loadProcedure,
+                LoadKillPair loadKill,
                 Disposable monitor1,
                 params Disposable[] monitors
                 )
             {
                 this.parent = parent;
                 this.key = key;
-                this.loadProcedure = loadProcedure;
+                this.loadKill = loadKill;
                 Load();
 
                 if (parent.monitoringWorker != null)
@@ -78,7 +84,7 @@ namespace ChaosFramework.IO.Containers
             internal void Load()
             {
                 if (parent == null || !parent.backgroundLoading)
-                    _content = new ChaosUtil.Primitives.Wrapper<AssetType>(loadProcedure(key, null));
+                    _content = new ChaosUtil.Primitives.Wrapper<AssetType>(loadKill.load(key, null));
                 else
                 {
                     CancellationToken cancel = new CancellationToken();
@@ -98,12 +104,12 @@ namespace ChaosFramework.IO.Containers
                 if (cancel.canceled)
                     return;
 
-                AssetType value = loadProcedure(key, cancel);
+                AssetType value = loadKill.load(key, cancel);
 
                 if (cancel.canceled)
                 {
                     if (value != null)
-                        parent.DisposeItem(value);
+                        loadKill.kill(value);
                 }
                 else
                     lock (contentLock)
@@ -116,7 +122,7 @@ namespace ChaosFramework.IO.Containers
                 {
                     if (_content != null)
                     {
-                        parent.DisposeItem(_content);
+                        loadKill.kill(_content);
                         _content = null;
                     }
                 }
@@ -124,11 +130,8 @@ namespace ChaosFramework.IO.Containers
 
             public void RefreshContent()
             {
-                if (parent != null)
-                {
-                    DisposeContent();
-                    Load();
-                }
+                DisposeContent();
+                Load();
             }
 
             public void AddMonitors(Disposable monitor1, params Disposable[] monitors)

@@ -5,7 +5,9 @@ using SysCol = System.Collections.Generic;
 
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class AssetContainer<AssetType> : Disposable, SysCol.IEnumerable<AssetContainer<AssetType>.Entry>
+    public abstract partial class AssetContainer<AssetType>
+        : Disposable, SysCol.IEnumerable<AssetContainer<AssetType>.Entry>
+        where AssetType : class
     {
         public class CancellationToken
         {
@@ -35,6 +37,9 @@ namespace ChaosFramework.IO.Containers
         public readonly StreamSource streamSource;
         public readonly bool backgroundLoading;
 
+        readonly Entry.LoadKillPair loadKillForFactory;
+        readonly Entry.LoadKillPair loadKillForStream;
+
         readonly MonitoringWorker monitoringWorker;
 
         readonly SysCol.Dictionary<Key, Entry> entries = new SysCol.Dictionary<Key, Entry>();
@@ -48,9 +53,7 @@ namespace ChaosFramework.IO.Containers
             set
             {
                 _defaultGenerator = value;
-                if (defaultValue.content != null)
-                    DisposeItem(defaultValue.content);
-                defaultValue.Load();
+                defaultValue.RefreshContent();
             }
         }
 
@@ -64,10 +67,13 @@ namespace ChaosFramework.IO.Containers
             Factory defaultGenerator = null
             )
         {
+            loadKillForFactory = new Entry.LoadKillPair(LoadFromFactory, DisposeItem);
+            loadKillForStream = new Entry.LoadKillPair(LoadFromStreamInternal, DisposeItem);
+
             _defaultGenerator = defaultGenerator;
             this.streamSource = streamSource;
             this.backgroundLoading = backgroundLoading;
-            defaultValue = Entry.Mock(GenerateDefault);
+            defaultValue = Entry.Mock(GenerateDefault, DisposeDefault);
             if (monitoring)
                 monitoringWorker = new MonitoringWorker(this);
         }
@@ -76,7 +82,7 @@ namespace ChaosFramework.IO.Containers
         public bool ContainsKey(string key) => ContainsKey(GenerateKey(key));
 
         AssetType GenerateDefault(Key key, CancellationToken cancel)
-            => _defaultGenerator == null ? default(AssetType) : _defaultGenerator(null);
+            => _defaultGenerator == null ? null : _defaultGenerator(null);
 
         protected virtual Key GenerateKey(string path) => new Key(path);
 
@@ -124,9 +130,9 @@ namespace ChaosFramework.IO.Containers
                 try
                 {
                     if (factories.ContainsKey(key))
-                        returnVal = new Entry(this, key, LoadFromFactory, monitor1, monitors);
+                        returnVal = new Entry(this, key, loadKillForFactory, monitor1, monitors);
                     else if (streamSource.ContainsKey(key.key))
-                        returnVal = new Entry(this, key, LoadFromStreamInternal, monitor1, monitors);
+                        returnVal = new Entry(this, key, loadKillForStream, monitor1, monitors);
                     else
                         return false;
 
@@ -168,9 +174,7 @@ namespace ChaosFramework.IO.Containers
         {
             lock (entries)
             {
-                if (defaultValue.content != null)
-                    DisposeItem(defaultValue.content);
-                defaultValue.Load();
+                defaultValue.RefreshContent();
 
                 foreach (SysCol.KeyValuePair<Key, Entry> pair in entries)
                     pair.Value.RefreshContent();
@@ -265,6 +269,12 @@ namespace ChaosFramework.IO.Containers
             }
         }
 
+        void DisposeDefault(AssetType defaultValue)
+        {
+            if (defaultValue != null)
+                DisposeItem(defaultValue);
+        }
+
         protected abstract void DisposeItem(AssetType obj);
 
         protected override void DoDispose()
@@ -274,8 +284,7 @@ namespace ChaosFramework.IO.Containers
 
             lock (entries)
             {
-                if (defaultValue.content != null)
-                    DisposeItem(defaultValue.content);
+                defaultValue.DisposeContent();
 
                 foreach (SysCol.KeyValuePair<Key, Entry> pair in entries)
                     pair.Value.DisposeContent();
