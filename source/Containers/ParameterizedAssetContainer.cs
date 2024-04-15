@@ -2,21 +2,16 @@ using ChaosFramework.Core;
 
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class ParameterizedDataContainer<DataType, ParameterType> : DataContainer<DataType>
+    public abstract partial class ParameterizedAssetContainer<AssetType, ParameterType> : AssetContainer<AssetType>
+        where AssetType : class
     {
         public virtual ParameterType defaultParameter { get; protected set; } = default(ParameterType);
 
         protected override Key GenerateKey(string path) => new ParameterizedKey(path, defaultParameter);
 
-        public ParameterizedDataContainer(ChaosArchive archive, bool monitoring, bool backgroundLoading = false)
-            : base(archive, monitoring, backgroundLoading)
+        public ParameterizedAssetContainer(Streams.StreamSource streamSource, bool monitoring, bool backgroundLoading = false)
+            : base(streamSource, monitoring, backgroundLoading)
         { }
-
-        public void AddResource(string key, ParameterType param, System.IO.Stream resource)
-            => AddResource(new ParameterizedKey(key, param), resource);
-
-        public override sealed void AddResource(string key, System.IO.Stream resource)
-            => AddResource(new ParameterizedKey(key, defaultParameter), resource);
 
         public override sealed Entry Load(string key, Disposable monitor1, Disposable[] monitors)
             => Load(new ParameterizedKey(key, defaultParameter), monitor1, monitors);

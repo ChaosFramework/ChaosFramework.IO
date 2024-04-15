@@ -1,6 +1,6 @@
 namespace ChaosFramework.IO.Containers
 {
-    public abstract partial class ParameterizedDataContainer<DataType, ParameterType>
+    public abstract partial class ParameterizedAssetContainer<AssetType, ParameterType>
     {
         [System.Diagnostics.DebuggerDisplay(nameof(key) + "={" + nameof(key) + "}, " + nameof(param) + "={" + nameof(param) + "}")]
         public class ParameterizedKey : Key
@@ -20,12 +20,11 @@ namespace ChaosFramework.IO.Containers
                 => Equals(obj as ParameterizedKey);
 
             public bool Equals(ParameterizedKey other)
-                => (object)other != null
-                && comparisonKey.Equals(other.comparisonKey)
+                => base.Equals(other)
                 && Collections.Util.CheckEquality(param, other.param);
 
             public override int GetHashCode()
-                => comparisonKey.GetHashCode() ^ param.GetHashCode();
+                => base.GetHashCode() ^ param.GetHashCode();
         }
     }
 }

@@ -4,20 +4,20 @@ using SysCol = System.Collections.Generic;
 
 namespace ChaosFramework.IO.Containers
 {
-    public partial class DataContainer<DataType>
+    public partial class AssetContainer<AssetType>
     {
         class MonitoringWorker : Disposable
         {
             const int COLLECTION_INTERVAL = 5000;
 
-            readonly DataContainer<DataType> parent;
+            readonly AssetContainer<AssetType> parent;
 
             readonly LinkedList<Key> disposals = new LinkedList<Key>();
             readonly System.ComponentModel.BackgroundWorker worker;
             readonly System.Threading.ManualResetEvent workerThreadDone;
             readonly System.Threading.ManualResetEvent workerInterruptRequested;
 
-            public MonitoringWorker(DataContainer<DataType> parent)
+            public MonitoringWorker(AssetContainer<AssetType> parent)
             {
                 this.parent = parent;
 
@@ -45,14 +45,14 @@ namespace ChaosFramework.IO.Containers
             {
                 LinkedList<Key> tmpDisposals = new LinkedList<Key>();
 
-                lock (parent.data)
-                    foreach (SysCol.KeyValuePair<Key, Entry> dataPair in parent.data)
+                lock (parent.entries)
+                    foreach (SysCol.KeyValuePair<Key, Entry> dataPair in parent.entries)
                     {
-                        foreach (Disposable monitor in dataPair.Value.myMonitors)
+                        foreach (Disposable monitor in dataPair.Value.monitors)
                             if (monitor.disposed)
-                                dataPair.Value.myMonitors.RemoveCurrent();
+                                dataPair.Value.monitors.RemoveCurrent();
 
-                        if (dataPair.Value.myMonitors.empty)
+                        if (dataPair.Value.monitors.empty)
                             tmpDisposals.Add(dataPair.Key);
                     }
 
@@ -72,10 +72,10 @@ namespace ChaosFramework.IO.Containers
                 {
                     foreach (Key key in disposals)
                     {
-                        if (!parent.data[key].myMonitors.empty)
+                        if (!parent.entries[key].monitors.empty)
                             continue;
 
-                        System.Diagnostics.Debug.WriteLine($"{GetType().Name}: disposing \"{key.key}\"");
+                        System.Diagnostics.Debug.WriteLine($"{parent.GetType().Name}: disposing \"{key.key}\"");
                         parent.RemoveEntry(key);
                     }
                     disposals.Clear();
