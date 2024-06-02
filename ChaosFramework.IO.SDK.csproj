@@ -3,6 +3,7 @@
 
   <PropertyGroup>
     <ProjectStyle>SDK</ProjectStyle>
+    <ChaosAnalyzers_CleanCode_Analyzer_TF>netstandard2.0</ChaosAnalyzers_CleanCode_Analyzer_TF>
   </PropertyGroup>
 
   <Import Project="ChaosFramework.IO.props" />

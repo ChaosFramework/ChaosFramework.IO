@@ -100,7 +100,9 @@ namespace ChaosFramework.IO
                     GetMemFileName(archiveFile),
                     0,
                     System.IO.MemoryMappedFiles.MemoryMappedFileAccess.Read,
+#if !NET8_0_OR_GREATER
                     null,
+#endif
                     HandleInheritability.None,
                     false
                     );

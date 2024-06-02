@@ -22,18 +22,9 @@
   <Import Project="submodules/ChaosPresets.References/ProjectReferences/ChaosUtil.Platform.targets" />
   <Import Project="submodules/ChaosPresets.References/ProjectReferences/ChaosUtil.Primitives.targets" />
   <Import Project="submodules/ChaosPresets.References/ProjectReferences/ChaosUtil.Reflection.targets" />
-  <ItemGroup>
-    <Reference Include="System" />
-  </ItemGroup>
 
   <!-- Analyzers -->
-  <PropertyGroup>
-    <ChaosAnalyzers_CleanCode_Analyzer_TF>net4.5</ChaosAnalyzers_CleanCode_Analyzer_TF>
-  </PropertyGroup>
   <Import Project="submodules/ChaosPresets.References/Analyzers/ChaosAnalyzers.CleanCode.targets" />
 
-  <!-- Cleanup Task -->
-  <Import Project="submodules/ChaosPresets.References/BuildTasks/ChaosBuild.ProjectAnalyzer.targets" />
-  <Import Project="submodules/ChaosPresets.References/BuildTasks/ChaosBuild.CodeFormatter.Tasks.ChangedProjectFiles.targets" />
-
+  <!-- TODO: support cleanup tasks -->
 </Project>
