@@ -35,6 +35,13 @@ namespace ChaosFramework.IO
                 return;
             initialized = true;
 
+            AssemblyManager.RegisterAssemblies(
+                typeof(Type).Assembly,
+                typeof(BitHash).Assembly,
+                typeof(LinkedList<>).Assembly,
+                typeof(ChaosIO).Assembly
+                );
+
             Primitives.BuiltIn.RegisterIO();
             Primitives.DotNet.RegisterIO();
             Primitives.String.RegisterIO();
