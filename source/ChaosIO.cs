@@ -35,13 +35,6 @@ namespace ChaosFramework.IO
                 return;
             initialized = true;
 
-            AssemblyManager.RegisterAssemblies(
-                typeof(Type).Assembly,
-                typeof(BitHash).Assembly,
-                typeof(LinkedList<>).Assembly,
-                typeof(ChaosIO).Assembly
-                );
-
             Primitives.BuiltIn.RegisterIO();
             Primitives.DotNet.RegisterIO();
             Primitives.String.RegisterIO();
@@ -108,6 +101,7 @@ namespace ChaosFramework.IO
             if (readers.ContainsKey(type))
                 throw new Exception($"{nameof(ChaosIO)} has already registered a reader/writer for {type}.");
 
+            AssemblyManager.RegisterType(type);
             readers[type] = reader;
             writers[type] = writer;
         }

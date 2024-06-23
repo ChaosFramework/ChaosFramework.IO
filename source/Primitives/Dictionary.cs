@@ -1,3 +1,4 @@
+using ChaosUtil.Reflection;
 using System.IO;
 using System.Reflection;
 using static ChaosFramework.IO.ChaosIO;
@@ -14,17 +15,18 @@ namespace ChaosFramework.IO.Primitives
 
         public static void RegisterIO()
         {
+            AssemblyManager.RegisterType(typeof(SysCol.Dictionary<,>));
             genericWriters.Add(MakeGenericWriter);
             genericReaders.Add(MakeGenericReader);
         }
 
         static Writer MakeGenericWriter(System.Type type)
-            => ChaosUtil.Reflection.Types.ImplementsOrInheritsGenericTypeDefinition(type, typeof(SysCol.Dictionary<,>))
+            => Types.ImplementsOrInheritsGenericTypeDefinition(type, typeof(SysCol.Dictionary<,>))
                 ? ChaosIO.MakeGenericWriter(type, writeMethod)
                 : null;
 
         static Reader MakeGenericReader(System.Type type)
-            => ChaosUtil.Reflection.Types.ImplementsOrInheritsGenericTypeDefinition(type, typeof(SysCol.Dictionary<,>))
+            => Types.ImplementsOrInheritsGenericTypeDefinition(type, typeof(SysCol.Dictionary<,>))
                 ? ChaosIO.MakeGenericReader(type, readMethod)
                 : null;
 
