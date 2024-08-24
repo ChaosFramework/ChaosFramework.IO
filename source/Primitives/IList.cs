@@ -1,3 +1,4 @@
+using ChaosUtil.Reflection;
 using System;
 using System.IO;
 using System.Reflection;
@@ -15,6 +16,8 @@ namespace ChaosFramework.IO.Primitives
 
         public static void RegisterIO()
         {
+            AssemblyManager.RegisterType(typeof(SysCol.IList<>));
+            AssemblyManager.RegisterAssembly(typeof(Collections.LinkedList<>).Assembly);
             genericReaders.Add(MakeGenericReader);
             genericWriters.Add(MakeGenericWriter);
         }
