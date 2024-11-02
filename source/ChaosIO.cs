@@ -3,6 +3,7 @@ using ChaosUtil.Primitives;
 using ChaosUtil.Reflection;
 using System;
 using System.IO;
+using System.Reflection;
 using BindingFlags = System.Reflection.BindingFlags;
 using SysCol = System.Collections.Generic;
 
@@ -28,31 +29,44 @@ namespace ChaosFramework.IO
         static readonly SysCol.Dictionary<Type, Writer> writers = new SysCol.Dictionary<Type, Writer>();
         static readonly SysCol.Dictionary<Type, Reader> readers = new SysCol.Dictionary<Type, Reader>();
 
-        static bool initialized = false;
-        public static void Init()
+        static SysCol.HashSet<Assembly> registeredAsses;
+
+        /// <summary>
+        ///     Initializes standard IO calls.
+        ///     Additionally registers custom IO calls for the provided <paramref name="asses"/>.
+        ///     Can be called repeatedly for different assemblies.
+        ///     Will not register duplicate IO calls.
+        /// </summary>
+        /// <param name="asses"> The <see cref="Assembly"/>s for which to register custom IO calls. </param>
+        public static void Init(params Assembly[] asses)
+            => Init((SysCol.IEnumerable<Assembly>)asses);
+
+        public static void Init(SysCol.IEnumerable<Assembly> asses)
         {
-            if (initialized)
-                return;
-            initialized = true;
+            if (registeredAsses == null)
+            {
+                registeredAsses = new SysCol.HashSet<Assembly>();
 
-            Primitives.BuiltIn.RegisterIO();
-            Primitives.DotNet.RegisterIO();
-            Primitives.String.RegisterIO();
+                Primitives.BuiltIn.RegisterIO();
+                Primitives.DotNet.RegisterIO();
+                Primitives.String.RegisterIO();
 
-            AddType(BitHash.Read, BitHash.Write);
-            AddType(BitArray.Read, BitArray.Write);
+                AddType(BitHash.Read, BitHash.Write);
+                AddType(BitArray.Read, BitArray.Write);
 
-            Primitives.Dictionary.RegisterIO();
-            Primitives.IList.RegisterIO();
-            Primitives.Tuple.RegisterIO();
-            Primitives.Type.RegisterIO();
+                Primitives.Dictionary.RegisterIO();
+                Primitives.IList.RegisterIO();
+                Primitives.Tuple.RegisterIO();
+                Primitives.Type.RegisterIO();
+            }
 
             // RegisterIO-Attributes
-            foreach (System.Reflection.Assembly ass in AssemblyManager.EnumerateRelevantAssemblies())
-                foreach (Type type in ass.GetTypes())
-                    foreach (System.Reflection.MethodInfo method in type.GetMethods(RegisterTypeAttribute.REGISTER_METHOD_BINDING))
-                        if (method.GetAttributes<RegisterTypeAttribute>(false).Length != 0)
-                            method.Invoke(null, Array<object>.empty);
+            foreach (Assembly ass in asses)
+                if (registeredAsses.Add(ass))
+                    foreach (Type type in ass.GetTypes())
+                        foreach (System.Reflection.MethodInfo method in type.GetMethods(RegisterTypeAttribute.REGISTER_METHOD_BINDING))
+                            if (method.GetAttributes<RegisterTypeAttribute>(false).Length != 0)
+                                method.Invoke(null, Array<object>.empty);
         }
 
         internal static Writer MakeGenericWriter(Type genericType, System.Reflection.MethodInfo method)
@@ -101,6 +115,7 @@ namespace ChaosFramework.IO
             if (readers.ContainsKey(type))
                 throw new Exception($"{nameof(ChaosIO)} has already registered a reader/writer for {type}.");
 
+            AssemblyManager.RegisterType(type);
             readers[type] = reader;
             writers[type] = writer;
         }

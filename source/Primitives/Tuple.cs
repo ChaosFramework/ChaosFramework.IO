@@ -1,4 +1,5 @@
 using ChaosFramework.Collections.Immutable;
+using ChaosUtil.Reflection;
 using System;
 using System.IO;
 using System.Reflection;
@@ -27,6 +28,16 @@ namespace ChaosFramework.IO.Primitives
 
         public static void RegisterIO()
         {
+            AssemblyManager.RegisterTypes(
+                typeof(Tuple<>),
+                typeof(Tuple<,>),
+                typeof(Tuple<,,>),
+                typeof(Tuple<,,,>),
+                typeof(Tuple<,,,,>),
+                typeof(Tuple<,,,,,>),
+                typeof(Tuple<,,,,,,>),
+                typeof(Tuple<,,,,,,,>)
+                );
             genericReaders.Add(MakeGenericReader);
             genericWriters.Add(MakeGenericWriter);
         }
