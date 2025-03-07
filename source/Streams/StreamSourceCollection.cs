@@ -51,5 +51,23 @@ namespace ChaosFramework.IO.Streams
         }
 
         bool StreamSource.alive => sources.All(Alive);
+
+        /// <summary>
+        ///     Returns a new <see cref="StreamSourceCollection"/> consisting of the underlying
+        ///     <see cref="StreamSource">StreamSources</see> of this instance concatenated with
+        ///     the provided <paramref name="additionalSources">StreamSources</paramref>.
+        /// </summary>
+        /// <param name="additionalSources"> The sources to append. </param>
+        public StreamSourceCollection Extend(SysCol.IEnumerable<StreamSource> additionalSources)
+            => new StreamSourceCollection(sources.Concat(additionalSources).ToArray());
+
+        /// <summary>
+        ///     Returns a new <see cref="StreamSourceCollection"/> consisting of the underlying
+        ///     <see cref="StreamSource">StreamSources</see> of this instance concatenated with
+        ///     the provided <paramref name="additionalSources">StreamSources</paramref>.
+        /// </summary>
+        /// <param name="additionalSources"> The sources to append. </param>
+        public StreamSourceCollection Extend(params StreamSource[] additionalSources)
+            => new StreamSourceCollection(sources.Concat(additionalSources).ToArray());
     }
 }
