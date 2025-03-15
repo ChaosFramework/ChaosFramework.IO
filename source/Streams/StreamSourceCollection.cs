@@ -59,7 +59,7 @@ namespace ChaosFramework.IO.Streams
         /// </summary>
         /// <param name="additionalSources"> The sources to append. </param>
         public StreamSourceCollection Extend(SysCol.IEnumerable<StreamSource> additionalSources)
-            => new StreamSourceCollection(sources.Concat(additionalSources).ToArray());
+            => Extend(additionalSources.ToArray());
 
         /// <summary>
         ///     Returns a new <see cref="StreamSourceCollection"/> consisting of the underlying
@@ -68,6 +68,11 @@ namespace ChaosFramework.IO.Streams
         /// </summary>
         /// <param name="additionalSources"> The sources to append. </param>
         public StreamSourceCollection Extend(params StreamSource[] additionalSources)
-            => new StreamSourceCollection(sources.Concat(additionalSources).ToArray());
+        {
+            StreamSource[] concat = new StreamSource[sources.Length + additionalSources.Length];
+            sources.CopyTo(concat, 0);
+            additionalSources.CopyTo(concat, sources.Length);
+            return new StreamSourceCollection(concat);
+        }
     }
 }
