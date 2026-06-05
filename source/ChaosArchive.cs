@@ -61,7 +61,7 @@ namespace ChaosFramework.IO
             for (int i = 0; i < numFiles; i++)
             {
                 string newFile = rd.ReadString();
-                string directory = Normalization.NormalizeRelative(Path.GetDirectoryName(newFile)).TrimStart('\\');
+                string directory = Normalization.NormalizeRelative(Path.GetDirectoryName(newFile)).TrimStart('\\', '/');
 
                 directories.AddUnique(directory);
                 nextFilePos = rd.Read<long>();

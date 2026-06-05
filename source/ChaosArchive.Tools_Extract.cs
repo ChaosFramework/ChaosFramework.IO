@@ -39,7 +39,7 @@ namespace ChaosFramework.IO
             static void ExtractFile(object fileExtractionContext)
             {
                 FileExtractionContext context = (FileExtractionContext)fileExtractionContext;
-                FileInfo fileInfo = new FileInfo($"{context.targetDirectory}\\{context.relative}");
+                FileInfo fileInfo = new FileInfo($"{context.targetDirectory}/{context.relative}");
                 fileInfo.Directory.Create();
                 File.WriteAllBytes(fileInfo.FullName, context.archive.LoadFile(context.relative));
             }
