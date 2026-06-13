@@ -33,21 +33,16 @@ namespace ChaosFramework.IO
                     .Replace("/", "__")
                     .Replace(":", "__");
 
-            readonly FileStream str;
             readonly System.IO.MemoryMappedFiles.MemoryMappedFile memFile;
 
-            public MemoryMappedFileStreamSource(FileInfo archiveFile, FileStream str)
+            public MemoryMappedFileStreamSource(FileInfo archiveFile)
             {
                 memFile = System.IO.MemoryMappedFiles.MemoryMappedFile.CreateFromFile(
-                    this.str = str,
-                    GetMemFileName(archiveFile),
-                    0,
-                    System.IO.MemoryMappedFiles.MemoryMappedFileAccess.Read,
-#if !NET8_0_OR_GREATER && !NETSTANDARD2_0_OR_GREATER
+                    archiveFile.FullName,
+                    FileMode.Open,
                     null,
-#endif
-                    HandleInheritability.None,
-                    false
+                    0,
+                    System.IO.MemoryMappedFiles.MemoryMappedFileAccess.Read
                     );
             }
 
@@ -68,7 +63,6 @@ namespace ChaosFramework.IO
             {
                 base.DoDispose();
                 memFile.Dispose();
-                str.Dispose();
             }
         }
 
@@ -174,15 +168,13 @@ namespace ChaosFramework.IO
             this.directories = directories.ToArray();
             try
             {
-#if OS_WINDOWS
-                memFile = new MemoryMappedFileStreamSource(archiveFile, str);
-#else
-                memFile = new InMemoryStreamSource(str);
-#endif
+                memFile = new MemoryMappedFileStreamSource(archiveFile);
+                str.Dispose();
             }
-            catch (Exception ex)
+            catch(PlatformNotSupportedException)
             {
-                throw new Exception("Could not create archive.", ex);
+                System.Diagnostics.Debug.WriteLine("MemoryMappedFile not supported on this platform. Falling back to in memory source.");
+                memFile = new InMemoryStreamSource(str);
             }
         }
 
