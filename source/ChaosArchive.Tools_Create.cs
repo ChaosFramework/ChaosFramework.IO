@@ -17,11 +17,12 @@ namespace ChaosFramework.IO
 
             static SysCol.IEnumerable<RelativeFullPathPair> EnumerateArchiveFiles(SysCol.IEnumerable<string> files, string baseDir)
             {
+                baseDir = Normalization.NormalizeFullPath(baseDir);
                 foreach (string file in files ?? Directory.EnumerateFiles(baseDir, "*", SearchOption.AllDirectories))
                 {
                     string normalizedFullPath = Normalization.NormalizeFullPath(file);
                     if (!normalizedFullPath.StartsWith(baseDir))
-                        throw new Exception($"ChaosArchive - Invalid path {file}");
+                        throw new Exception($"ChaosArchive - Invalid path {normalizedFullPath} (must start with {baseDir})");
 
                     string relative = normalizedFullPath.Substring(baseDir.Length).TrimStart(lineSeparators);
                     yield return new RelativeFullPathPair(relative, normalizedFullPath);
