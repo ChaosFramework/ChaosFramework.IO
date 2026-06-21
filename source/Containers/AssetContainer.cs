@@ -105,7 +105,7 @@ namespace ChaosFramework.IO.Containers
             )
         {
             // TODO: Get rid of fileExtensions
-            foreach (string key in streamSource.EnumerateKeys($"{directory}\\{(recursive ? "**" : "*")}"))
+            foreach (string key in streamSource.EnumerateKeys($"{directory}/{(recursive ? "**" : "*")}"))
                 foreach (string ext in fileExtensions)
                     if (key.ToLower().EndsWith(ext.ToLower()))
                     {

@@ -13,6 +13,79 @@ namespace ChaosFramework.IO
 {
     public partial class ChaosArchive : Disposable, StreamSource
     {
+        interface StreamViewSource
+        {
+            Stream CreateStream(FilePos filePosition);
+            void Dispose();
+        }
+
+        class MemoryMappedFileStreamSource : Disposable, StreamViewSource
+        {
+            readonly System.IO.MemoryMappedFiles.MemoryMappedFile memFile;
+
+            public MemoryMappedFileStreamSource(FileInfo archiveFile)
+            {
+                memFile = System.IO.MemoryMappedFiles.MemoryMappedFile.CreateFromFile(
+                    archiveFile.FullName,
+                    FileMode.Open,
+                    null, // only necessary when sharing across processes
+                    0,    // use actual file size
+                    System.IO.MemoryMappedFiles.MemoryMappedFileAccess.Read
+                    );
+            }
+
+            public Stream CreateStream(FilePos filePosition)
+            {
+                if (filePosition.length == 0)
+                    return new MemoryStream(Array<byte>.empty);
+                else
+                    lock (memFile)
+                        return memFile.CreateViewStream(
+                            filePosition.position,
+                            filePosition.length,
+                            System.IO.MemoryMappedFiles.MemoryMappedFileAccess.Read
+                            );
+            }
+
+            protected override void DoDispose()
+            {
+                base.DoDispose();
+                memFile.Dispose();
+            }
+        }
+
+        class InMemoryStreamSource : Disposable, StreamViewSource
+        {
+            readonly Stream str;
+
+            public InMemoryStreamSource(Stream str)
+            {
+                this.str = str;
+            }
+
+            public Stream CreateStream(FilePos filePosition)
+            {
+                if (filePosition.length == 0)
+                    return new MemoryStream(Array<byte>.empty);
+                else
+                    using (StreamView view = new StreamView(str, filePosition.position, filePosition.length))
+                    {
+                        // TODO: allow multiple views on the same stream to avoid copies
+                        view.Position = 0;
+                        MemoryStream mem = new MemoryStream(filePosition.length);
+                        view.CopyTo(mem, filePosition.length);
+                        mem.Position = 0;
+                        return mem;
+                    }
+            }
+
+            protected override void DoDispose()
+            {
+                base.DoDispose();
+                str.Dispose();
+            }
+        }
+
         struct FilePos
         {
             public readonly long position;
@@ -25,23 +98,11 @@ namespace ChaosFramework.IO
             }
         }
 
-        static string GetMemFileName(FileInfo archiveFile)
-            => "__ChaosArchive__"
-               + System.Diagnostics.Process.GetCurrentProcess().Id + "__"
-               + EliminateIllegalMemFileCharacters(ChaosUtil.Reflection.AssemblyMeta.productName) + "__"
-               + EliminateIllegalMemFileCharacters(archiveFile.FullName);
-
-        static string EliminateIllegalMemFileCharacters(string str)
-            => str.Replace(" ", "__")
-                  .Replace("\\", "__")
-                  .Replace("/", "__")
-                  .Replace(":", "__");
-
         public readonly FileInfo archiveFile;
 
         readonly SysCol.Dictionary<string, FilePos> filePos = new SysCol.Dictionary<string, FilePos>();
         readonly string[] directories;
-        readonly System.IO.MemoryMappedFiles.MemoryMappedFile memFile;
+        readonly StreamViewSource source;
 
         readonly SysCol.Dictionary<string, LinkedList<string>> cachedFileSearches = new SysCol.Dictionary<string, LinkedList<string>>();
 
@@ -53,7 +114,7 @@ namespace ChaosFramework.IO
 
             string lastFile = null;
             long nextFilePos = 0, lastFilePos = 0;
-            FileStream str = File.OpenRead(archiveFile.FullName); // TODO: do we need to dispose this?
+            FileStream str = File.OpenRead(archiveFile.FullName);
             BinaryReader rd = new BinaryReader(str);
             LinkedList<string> directories = new LinkedList<string>();
 
@@ -61,7 +122,7 @@ namespace ChaosFramework.IO
             for (int i = 0; i < numFiles; i++)
             {
                 string newFile = rd.ReadString();
-                string directory = Normalization.NormalizeRelative(Path.GetDirectoryName(newFile)).TrimStart('\\');
+                string directory = Normalization.NormalizeRelative(Path.GetDirectoryName(newFile)).TrimStart('\\', '/');
 
                 directories.AddUnique(directory);
                 nextFilePos = rd.Read<long>();
@@ -95,21 +156,13 @@ namespace ChaosFramework.IO
             this.directories = directories.ToArray();
             try
             {
-                memFile = System.IO.MemoryMappedFiles.MemoryMappedFile.CreateFromFile(
-                    str,
-                    GetMemFileName(archiveFile),
-                    0,
-                    System.IO.MemoryMappedFiles.MemoryMappedFileAccess.Read,
-#if !NET8_0_OR_GREATER && !NETSTANDARD2_0_OR_GREATER
-                    null,
-#endif
-                    HandleInheritability.None,
-                    false
-                    );
+                source = new MemoryMappedFileStreamSource(archiveFile);
+                str.Dispose();
             }
-            catch (Exception ex)
+            catch(PlatformNotSupportedException)
             {
-                throw new Exception("Could not create archive.", ex);
+                System.Diagnostics.Debug.WriteLine("MemoryMappedFile not supported on this platform. Falling back to in memory source.");
+                source = new InMemoryStreamSource(str);
             }
         }
 
@@ -205,7 +258,7 @@ namespace ChaosFramework.IO
             if (filePosition.length == 0)
                 return Array<byte>.empty;
 
-            using (Stream str = CreateStream(filePosition))
+            using (Stream str = source.CreateStream(filePosition))
             {
                 byte[] output = new byte[filePosition.length];
                 str.Read(output, 0, filePosition.length);
@@ -222,20 +275,7 @@ namespace ChaosFramework.IO
             if (!filePos.TryGetValue(file, out filePosition))
                 throw new FileNotFoundException($"Archive does not contain file {file}.");
 
-            return CreateStream(filePosition);
-        }
-
-        Stream CreateStream(FilePos filePosition)
-        {
-            if (filePosition.length == 0)
-                return new MemoryStream(Array<byte>.empty);
-            else
-                lock (memFile)
-                    return memFile.CreateViewStream(
-                        filePosition.position,
-                        filePosition.length,
-                        System.IO.MemoryMappedFiles.MemoryMappedFileAccess.Read
-                        );
+            return source.CreateStream(filePosition);
         }
 
         bool StreamSource.ContainsKey(string key) => ContainsFile(key);
@@ -245,7 +285,7 @@ namespace ChaosFramework.IO
         protected override void DoDispose()
         {
             filePos.Clear();
-            memFile.Dispose();
+            source.Dispose();
             base.DoDispose();
         }
     }

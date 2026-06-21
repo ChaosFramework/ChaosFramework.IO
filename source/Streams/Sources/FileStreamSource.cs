@@ -41,7 +41,7 @@ namespace ChaosFramework.IO.Streams.Sources
         {
             try
             {
-                return File.Exists($"{rootDir.FullName}\\{key}");
+                return File.Exists($"{rootDir.FullName}/{key}");
             }
             catch
             {
@@ -51,7 +51,7 @@ namespace ChaosFramework.IO.Streams.Sources
 
         Stream StreamSource.OpenRead(string key)
         {
-            try { return File.OpenRead($"{rootDir.FullName}\\{key}"); }
+            try { return File.OpenRead($"{rootDir.FullName}/{key}"); }
             catch (PathTooLongException ex) { throw new KeyFormatException(key, ex); }
             catch (System.ArgumentException ex) { throw new KeyFormatException(key, ex); }
             catch (System.NotSupportedException ex) { throw new KeyFormatException(key, ex); }
