@@ -72,7 +72,8 @@ namespace ChaosFramework.IO.Containers
                 {
                     foreach (Key key in disposals)
                     {
-                        if (!parent.entries[key].monitors.empty)
+                        Entry entry;
+                        if (!parent.entries.TryGetValue(key, out entry) || !entry.monitors.empty)
                             continue;
 
                         System.Diagnostics.Debug.WriteLine($"{parent.GetType().Name}: disposing \"{key.key}\"");
