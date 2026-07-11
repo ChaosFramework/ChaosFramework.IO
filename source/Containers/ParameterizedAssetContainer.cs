@@ -1,3 +1,6 @@
+using System;
+using System.Text.RegularExpressions;
+using ChaosFramework.Collections;
 using ChaosFramework.Core;
 
 namespace ChaosFramework.IO.Containers
@@ -31,14 +34,19 @@ namespace ChaosFramework.IO.Containers
         public bool ContainsKey(string key, ParameterType param)
             => ContainsKey(new ParameterizedKey(key, param));
 
-        public void LoadDirectory(
-            string directory,
-            ParameterType param,
-            string[] fileExtensions,
-            bool recursive,
-            Disposable monitor1,
-            params Disposable[] monitors
-            )
-            => LoadDirectory(name => new ParameterizedKey(name, param), directory, fileExtensions, recursive, monitor1, monitors);
+        public void LoadAll(ParameterType param, Disposable monitor1, params Disposable[] monitors)
+            => LoadAll(param, Linq.PredicateTrue, monitor1, monitors);
+
+        public void LoadAll(ParameterType param, string regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAll(param, new Regex(regex, RegexOptions.Compiled), monitor1, monitors);
+
+        public void LoadAll(ParameterType param, Regex regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAll(param, k => regex.IsMatch(k.key), monitor1, monitors);
+
+        public void LoadAll(ParameterType param, Func<string, Key> generateKey, Regex regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAll(param, k => regex.IsMatch(k.key), monitor1, monitors);
+
+        public void LoadAll(ParameterType param, Predicate<Key> load, Disposable monitor1, params Disposable[] monitors)
+            => LoadAll(name => new ParameterizedKey(name, param), load, monitor1, monitors);
     }
 }
