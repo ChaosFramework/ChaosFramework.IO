@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using ChaosFramework.Collections;
 using ChaosFramework.Core;
 using ChaosFramework.IO.Streams;
@@ -111,6 +112,34 @@ namespace ChaosFramework.IO.Containers
                 if (load(assetKey))
                     Load(assetKey, monitor1, monitors);
             }
+        }
+
+        public Task LoadAllAsync(Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(GenerateKey, Linq.PredicateTrue, monitor1, monitors);
+
+        public Task LoadAllAsync(string regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(GenerateKey, new Regex(regex, RegexOptions.Compiled), monitor1, monitors);
+
+        public Task LoadAllAsync(Regex regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(GenerateKey, k => regex.IsMatch(k.key), monitor1, monitors);
+
+        public Task LoadAllAsync(Func<string, Key> generateKey, Regex regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(generateKey, k => regex.IsMatch(k.key), monitor1, monitors);
+
+        public Task LoadAllAsync(Predicate<Key> load, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(GenerateKey, load, monitor1, monitors);
+
+        public Task LoadAllAsync(Func<string, Key> generateKey, Predicate<Key> load, Disposable monitor1, params Disposable[] monitors)
+        {
+            LinkedList<Task> tasks = new LinkedList<Task>();
+            foreach (string streamSourceKey in streamSource.EnumerateKeys())
+            {
+                Key assetKey = generateKey(streamSourceKey);
+                if (load(assetKey))
+                    tasks.Add(Task.Run(() => Load(assetKey, monitor1, monitors)));
+            }
+
+            return Task.WhenAll(tasks);
         }
 
         public virtual bool TryLoad(string key, out Entry loaded, Disposable monitor1, params Disposable[] monitors)

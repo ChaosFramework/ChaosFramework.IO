@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using ChaosFramework.Collections;
 using ChaosFramework.Core;
 
@@ -48,5 +49,20 @@ namespace ChaosFramework.IO.Containers
 
         public void LoadAll(ParameterType param, Predicate<Key> load, Disposable monitor1, params Disposable[] monitors)
             => LoadAll(name => new ParameterizedKey(name, param), load, monitor1, monitors);
+
+        public Task LoadAllAsync(ParameterType param, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(param, Linq.PredicateTrue, monitor1, monitors);
+
+        public Task LoadAllAsync(ParameterType param, string regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(param, new Regex(regex, RegexOptions.Compiled), monitor1, monitors);
+
+        public Task LoadAllAsync(ParameterType param, Regex regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(param, k => regex.IsMatch(k.key), monitor1, monitors);
+
+        public Task LoadAllAsync(ParameterType param, Func<string, Key> generateKey, Regex regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(param, k => regex.IsMatch(k.key), monitor1, monitors);
+
+        public Task LoadAllAsync(ParameterType param, Predicate<Key> load, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(name => new ParameterizedKey(name, param), load, monitor1, monitors);
     }
 }
