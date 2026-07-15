@@ -51,5 +51,56 @@ namespace ChaosFramework.IO.Streams
         }
 
         bool StreamSource.alive => sources.All(Alive);
+
+        /// <summary>
+        ///     Returns a new <see cref="StreamSourceCollection"/> consisting of the underlying
+        ///     <see cref="StreamSource">StreamSources</see> of this instance concatenated with
+        ///     the provided <paramref name="additionalSources">StreamSources</paramref>.
+        /// </summary>
+        /// <param name="additionalSources"> The sources to append. </param>
+        public StreamSourceCollection Append(SysCol.IEnumerable<StreamSource> additionalSources)
+            => Append(additionalSources.ToArray());
+
+        /// <summary>
+        ///     Returns a new <see cref="StreamSourceCollection"/> consisting of the underlying
+        ///     <see cref="StreamSource">StreamSources</see> of this instance concatenated with
+        ///     the provided <paramref name="additionalSources">StreamSources</paramref>.
+        /// </summary>
+        /// <param name="additionalSources"> The sources to append. </param>
+        public StreamSourceCollection Append(params StreamSource[] additionalSources)
+            => new StreamSourceCollection(Concat(sources, additionalSources));
+
+        /// <summary>
+        ///     Returns a new <see cref="StreamSourceCollection"/> consisting of the provided
+        ///     <paramref name="additionalSources">StreamSources</paramref> concatenated with
+        ///     the underlying <see cref="StreamSource">StreamSources</see> of this instance.
+        /// </summary>
+        /// <param name="additionalSources"> The sources to prepend. </param>
+        public StreamSourceCollection Prepend(SysCol.IEnumerable<StreamSource> additionalSources)
+            => Prepend(additionalSources.ToArray());
+
+        /// <summary>
+        ///     Returns a new <see cref="StreamSourceCollection"/> consisting of the provided
+        ///     <paramref name="additionalSources">StreamSources</paramref> concatenated with
+        ///     the underlying <see cref="StreamSource">StreamSources</see> of this instance.
+        /// </summary>
+        /// <param name="additionalSources"> The sources to prepend. </param>
+        public StreamSourceCollection Prepend(params StreamSource[] additionalSources)
+            => new StreamSourceCollection(Concat(additionalSources, sources));
+
+        /// <summary>
+        ///     Returns a new array consisting of the contents of <paramref name="first"/>
+        ///     concatenated with the contents of <paramref name="second"/>.
+        /// </summary>
+        /// <param name="first"> The first array. </param>
+        /// <param name="second"> The second array. </param>
+        /// <returns> A new array containing </returns>
+        static StreamSource[] Concat(StreamSource[] first, StreamSource[] second)
+        {
+            StreamSource[] concat = new StreamSource[first.Length + second.Length];
+            first.CopyTo(concat, 0);
+            second.CopyTo(concat, first.Length);
+            return concat;
+        }
     }
 }
