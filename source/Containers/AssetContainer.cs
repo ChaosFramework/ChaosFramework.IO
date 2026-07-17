@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using ChaosFramework.Collections;
 using ChaosFramework.Core;
@@ -45,7 +47,7 @@ namespace ChaosFramework.IO.Containers
 
         readonly MonitoringWorker monitoringWorker;
 
-        readonly SysCol.Dictionary<Key, Entry> entries = new SysCol.Dictionary<Key, Entry>();
+        readonly ConcurrentDictionary<Key, Entry> entries = new ConcurrentDictionary<Key, Entry>();
         readonly SysCol.Dictionary<Key, Factory> factories = new SysCol.Dictionary<Key, Factory>();
 
         readonly Entry defaultValue;
@@ -145,34 +147,46 @@ namespace ChaosFramework.IO.Containers
         public virtual bool TryLoad(string key, out Entry loaded, Disposable monitor1, params Disposable[] monitors)
             => TryLoad(GenerateKey(key), out loaded, monitor1, monitors);
 
+        static ConcurrentDictionary<Key, byte> loadingInProgress = new ConcurrentDictionary<Key, byte>();
         protected bool TryLoad(Key key, out Entry returnVal, Disposable monitor1, params Disposable[] monitors)
         {
             lock (entries)
             {
                 if (entries.TryGetValue(key, out returnVal))
                 {
+                    if (loadingInProgress.ContainsKey(key))
+                    {
+                        while (loadingInProgress.ContainsKey(key))
+                            Thread.Yield();
+                        returnVal = entries[key];
+                    }
+
                     returnVal.AddMonitors(monitor1, monitors);
                     return true;
                 }
-
-                try
-                {
-                    if (factories.ContainsKey(key))
-                        returnVal = new Entry(this, key, loadKillForFactory, monitor1, monitors);
-                    else if (streamSource.ContainsKey(key.key))
-                        returnVal = new Entry(this, key, loadKillForStream, monitor1, monitors);
-                    else
-                        return false;
-
-                    entries.Add(key, returnVal);
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"{GetType()} could not load the following file: \"{key}\"", ex);
-                }
-
-                return true;
+                else
+                    loadingInProgress[key] = 1;
             }
+
+
+            try
+            {
+                if (factories.ContainsKey(key))
+                    returnVal = new Entry(this, key, loadKillForFactory, monitor1, monitors);
+                else if (streamSource.ContainsKey(key.key))
+                    returnVal = new Entry(this, key, loadKillForStream, monitor1, monitors);
+                else
+                    return false;
+
+                entries[key] = returnVal;
+                loadingInProgress.TryRemove(key, out _);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"{GetType()} could not load the following file: \"{key}\"", ex);
+            }
+
+            return true;
         }
 
         public virtual Entry Load(string key, Disposable monitor1, params Disposable[] monitors)
@@ -214,7 +228,7 @@ namespace ChaosFramework.IO.Containers
             lock (entries)
             {
                 Entry entry = entries[key];
-                entries.Remove(key);
+                entries.TryRemove(key, out _);
                 entry.DisposeContent();
             }
         }
@@ -291,7 +305,7 @@ namespace ChaosFramework.IO.Containers
                 Entry entry;
                 if (entries.TryGetValue(key, out entry))
                 {
-                    entries.Remove(key);
+                    entries.TryRemove(key, out _);
                     entry.DisposeContent();
                 }
             }
