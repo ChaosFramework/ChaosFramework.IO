@@ -49,6 +49,7 @@ namespace ChaosFramework.IO.Containers
 
         readonly ConcurrentDictionary<Key, Entry> entries = new ConcurrentDictionary<Key, Entry>();
         readonly SysCol.Dictionary<Key, Factory> factories = new SysCol.Dictionary<Key, Factory>();
+        readonly ConcurrentDictionary<Key, byte> loadingInProgress = new ConcurrentDictionary<Key, byte>();
 
         readonly Entry defaultValue;
         Factory _defaultGenerator;
@@ -147,7 +148,6 @@ namespace ChaosFramework.IO.Containers
         public virtual bool TryLoad(string key, out Entry loaded, Disposable monitor1, params Disposable[] monitors)
             => TryLoad(GenerateKey(key), out loaded, monitor1, monitors);
 
-        static ConcurrentDictionary<Key, byte> loadingInProgress = new ConcurrentDictionary<Key, byte>();
         protected bool TryLoad(Key key, out Entry returnVal, Disposable monitor1, params Disposable[] monitors)
         {
             lock (entries)
