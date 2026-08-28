@@ -1,6 +1,9 @@
+using System;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using ChaosFramework.Collections;
 using ChaosFramework.Core;
 using ChaosFramework.IO.Streams;
-using System;
 using SysCol = System.Collections.Generic;
 
 namespace ChaosFramework.IO.Containers
@@ -86,32 +89,57 @@ namespace ChaosFramework.IO.Containers
 
         protected virtual Key GenerateKey(string path) => new Key(path);
 
-        public void LoadDirectory(
-            string directory,
-            string[] fileExtensions,
-            bool recursive,
-            Disposable monitor1,
-            params Disposable[] monitors
-            )
-            => LoadDirectory(GenerateKey, directory, fileExtensions, recursive, monitor1, monitors);
+        public void LoadAll(Disposable monitor1, params Disposable[] monitors)
+            => LoadAll(GenerateKey, Linq.PredicateTrue, monitor1, monitors);
 
-        protected void LoadDirectory(
-            Func<string, Key> generateKey,
-            string directory,
-            string[] fileExtensions,
-            bool recursive,
-            Disposable monitor1,
-            params Disposable[] monitors
-            )
+        public void LoadAll(string regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAll(GenerateKey, new Regex(regex, RegexOptions.Compiled), monitor1, monitors);
+
+        public void LoadAll(Regex regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAll(GenerateKey, k => regex.IsMatch(k.key), monitor1, monitors);
+
+        public void LoadAll(Func<string, Key> generateKey, Regex regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAll(generateKey, k => regex.IsMatch(k.key), monitor1, monitors);
+
+        public void LoadAll(Predicate<Key> load, Disposable monitor1, params Disposable[] monitors)
+            => LoadAll(GenerateKey, load, monitor1, monitors);
+
+        public void LoadAll(Func<string, Key> generateKey, Predicate<Key> load, Disposable monitor1, params Disposable[] monitors)
         {
-            // TODO: Get rid of fileExtensions
-            foreach (string key in streamSource.EnumerateKeys($"{directory}/{(recursive ? "**" : "*")}"))
-                foreach (string ext in fileExtensions)
-                    if (key.ToLower().EndsWith(ext.ToLower()))
-                    {
-                        Load(generateKey(key), monitor1, monitors);
-                        break;
-                    }
+            foreach (string streamSourceKey in streamSource.EnumerateKeys())
+            {
+                Key assetKey = generateKey(streamSourceKey);
+                if (load(assetKey))
+                    Load(assetKey, monitor1, monitors);
+            }
+        }
+
+        public Task LoadAllAsync(Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(GenerateKey, Linq.PredicateTrue, monitor1, monitors);
+
+        public Task LoadAllAsync(string regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(GenerateKey, new Regex(regex, RegexOptions.Compiled), monitor1, monitors);
+
+        public Task LoadAllAsync(Regex regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(GenerateKey, k => regex.IsMatch(k.key), monitor1, monitors);
+
+        public Task LoadAllAsync(Func<string, Key> generateKey, Regex regex, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(generateKey, k => regex.IsMatch(k.key), monitor1, monitors);
+
+        public Task LoadAllAsync(Predicate<Key> load, Disposable monitor1, params Disposable[] monitors)
+            => LoadAllAsync(GenerateKey, load, monitor1, monitors);
+
+        public Task LoadAllAsync(Func<string, Key> generateKey, Predicate<Key> load, Disposable monitor1, params Disposable[] monitors)
+        {
+            LinkedList<Task> tasks = new LinkedList<Task>();
+            foreach (string streamSourceKey in streamSource.EnumerateKeys())
+            {
+                Key assetKey = generateKey(streamSourceKey);
+                if (load(assetKey))
+                    tasks.Add(Task.Run(() => Load(assetKey, monitor1, monitors)));
+            }
+
+            return Task.WhenAll(tasks);
         }
 
         public virtual bool TryLoad(string key, out Entry loaded, Disposable monitor1, params Disposable[] monitors)
