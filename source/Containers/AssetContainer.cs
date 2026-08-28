@@ -152,15 +152,15 @@ namespace ChaosFramework.IO.Containers
         {
             lock (entries)
             {
-                if (entries.TryGetValue(key, out returnVal))
+                if (loadingInProgress.ContainsKey(key))
                 {
-                    if (loadingInProgress.ContainsKey(key))
-                    {
-                        while (loadingInProgress.ContainsKey(key))
-                            Thread.Yield();
-                        returnVal = entries[key];
-                    }
-
+                    while (loadingInProgress.ContainsKey(key))
+                        Thread.Yield();
+                    returnVal = entries[key];
+                    returnVal.AddMonitors(monitor1, monitors);
+                    return true;
+                } else if (entries.TryGetValue(key, out returnVal))
+                {
                     returnVal.AddMonitors(monitor1, monitors);
                     return true;
                 }
