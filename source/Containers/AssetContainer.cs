@@ -66,6 +66,8 @@ namespace ChaosFramework.IO.Containers
         public SysCol.IEnumerable<Entry> content => entries.Values;
         public SysCol.IEnumerable<Key> keys => entries.Keys;
 
+        public bool monitoring => monitoringWorker != null;
+
         public AssetContainer(
             StreamSource streamSource,
             bool monitoring,
@@ -150,43 +152,50 @@ namespace ChaosFramework.IO.Containers
 
         protected bool TryLoad(Key key, out Entry returnVal, Disposable monitor1, params Disposable[] monitors)
         {
-            lock (entries)
+            if (entries.TryGetValue(key, out returnVal))
             {
-                if (loadingInProgress.ContainsKey(key))
-                {
-                    while (loadingInProgress.ContainsKey(key))
-                        Thread.Yield();
-                    returnVal = entries[key];
-                    returnVal.AddMonitors(monitor1, monitors);
-                    return true;
-                } else if (entries.TryGetValue(key, out returnVal))
+                returnVal.AddMonitors(monitor1, monitors);
+                return true;
+            }
+            else if (!loadingInProgress.TryAdd(key, 1))
+            {
+                while (loadingInProgress.ContainsKey(key))
+                    Thread.Yield();
+
+                if (entries.TryGetValue(key, out returnVal))
                 {
                     returnVal.AddMonitors(monitor1, monitors);
                     return true;
                 }
                 else
-                    loadingInProgress[key] = 1;
-            }
-
-
-            try
-            {
-                if (factories.ContainsKey(key))
-                    returnVal = new Entry(this, key, loadKillForFactory, monitor1, monitors);
-                else if (streamSource.ContainsKey(key.key))
-                    returnVal = new Entry(this, key, loadKillForStream, monitor1, monitors);
-                else
                     return false;
-
-                entries[key] = returnVal;
-                loadingInProgress.TryRemove(key, out _);
             }
-            catch (Exception ex)
+            else
             {
-                throw new Exception($"{GetType()} could not load the following file: \"{key}\"", ex);
-            }
+                try
+                {
+                    if (factories.ContainsKey(key))
+                        returnVal = new Entry(this, key, loadKillForFactory, monitor1, monitors);
+                    else if (streamSource.ContainsKey(key.key))
+                        returnVal = new Entry(this, key, loadKillForStream, monitor1, monitors);
+                    else
+                        return false;
 
-            return true;
+                    entries[key] = returnVal;
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    throw new AssetLoadException<AssetType>(key, ex);
+                }
+                finally
+                {
+                    if (!loadingInProgress.TryRemove(key, out _))
+                        System.Diagnostics.Debug.Fail(
+                            $"[{GetType().Name}] Failed to remove from {nameof(loadingInProgress)} for key {key.key}."
+                            );
+                }
+            }
         }
 
         public virtual Entry Load(string key, Disposable monitor1, params Disposable[] monitors)
