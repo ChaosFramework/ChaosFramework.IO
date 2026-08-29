@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using ChaosFramework.Collections;
 using ChaosFramework.Core;
@@ -45,8 +47,9 @@ namespace ChaosFramework.IO.Containers
 
         readonly MonitoringWorker monitoringWorker;
 
-        readonly SysCol.Dictionary<Key, Entry> entries = new SysCol.Dictionary<Key, Entry>();
+        readonly ConcurrentDictionary<Key, Entry> entries = new ConcurrentDictionary<Key, Entry>();
         readonly SysCol.Dictionary<Key, Factory> factories = new SysCol.Dictionary<Key, Factory>();
+        readonly ConcurrentDictionary<Key, byte> loadingInProgress = new ConcurrentDictionary<Key, byte>();
 
         readonly Entry defaultValue;
         Factory _defaultGenerator;
@@ -62,6 +65,8 @@ namespace ChaosFramework.IO.Containers
 
         public SysCol.IEnumerable<Entry> content => entries.Values;
         public SysCol.IEnumerable<Key> keys => entries.Keys;
+
+        public bool monitoring => monitoringWorker != null;
 
         public AssetContainer(
             StreamSource streamSource,
@@ -147,14 +152,26 @@ namespace ChaosFramework.IO.Containers
 
         protected bool TryLoad(Key key, out Entry returnVal, Disposable monitor1, params Disposable[] monitors)
         {
-            lock (entries)
+            if (entries.TryGetValue(key, out returnVal))
             {
+                returnVal.AddMonitors(monitor1, monitors);
+                return true;
+            }
+            else if (!loadingInProgress.TryAdd(key, 1))
+            {
+                while (loadingInProgress.ContainsKey(key))
+                    Thread.Yield();
+
                 if (entries.TryGetValue(key, out returnVal))
                 {
                     returnVal.AddMonitors(monitor1, monitors);
                     return true;
                 }
-
+                else
+                    return false;
+            }
+            else
+            {
                 try
                 {
                     if (factories.ContainsKey(key))
@@ -164,14 +181,20 @@ namespace ChaosFramework.IO.Containers
                     else
                         return false;
 
-                    entries.Add(key, returnVal);
+                    entries[key] = returnVal;
+                    return true;
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"{GetType()} could not load the following file: \"{key}\"", ex);
+                    throw new AssetLoadException<AssetType>(key, ex);
                 }
-
-                return true;
+                finally
+                {
+                    if (!loadingInProgress.TryRemove(key, out _))
+                        System.Diagnostics.Debug.Fail(
+                            $"[{GetType().Name}] Failed to remove from {nameof(loadingInProgress)} for key {key.key}."
+                            );
+                }
             }
         }
 
@@ -214,7 +237,7 @@ namespace ChaosFramework.IO.Containers
             lock (entries)
             {
                 Entry entry = entries[key];
-                entries.Remove(key);
+                entries.TryRemove(key, out _);
                 entry.DisposeContent();
             }
         }
@@ -291,7 +314,7 @@ namespace ChaosFramework.IO.Containers
                 Entry entry;
                 if (entries.TryGetValue(key, out entry))
                 {
-                    entries.Remove(key);
+                    entries.TryRemove(key, out _);
                     entry.DisposeContent();
                 }
             }

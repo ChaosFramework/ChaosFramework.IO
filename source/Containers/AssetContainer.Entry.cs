@@ -1,3 +1,4 @@
+using System.Linq;
 using ChaosFramework.Collections;
 using ChaosFramework.Core;
 
@@ -54,8 +55,6 @@ namespace ChaosFramework.IO.Containers
             internal readonly AdvancedLinkedList<Disposable> monitors;
             readonly LoadKillPair loadKill;
 
-            bool monitoring => monitors != null;
-
             Entry(LoadKillPair loadKill)
             {
                 this.loadKill = loadKill;
@@ -75,10 +74,14 @@ namespace ChaosFramework.IO.Containers
                 this.loadKill = loadKill;
                 Load();
 
-                if (parent.monitoringWorker != null)
-                    this.monitors = new AdvancedLinkedList<Disposable>();
+                if (parent.monitoring)
+                {
+                    if (monitor1 == null)
+                        throw new System.ArgumentNullException(nameof(monitor1));
 
-                AddMonitors(monitor1, monitors);
+                    this.monitors = new AdvancedLinkedList<Disposable>(monitor1);
+                    this.monitors.AddUnique(monitors.OfType<Disposable>());
+                }
             }
 
             internal void Load()
@@ -139,21 +142,23 @@ namespace ChaosFramework.IO.Containers
                 if (monitor1 == null)
                     throw new System.ArgumentNullException(nameof(monitor1));
 
-                if (monitoring)
-                {
-                    this.monitors.AddUnique(monitor1);
+                if (parent.monitoring)
+                    lock (this.monitors)
+                    {
+                        this.monitors.AddUnique(monitor1);
 
-                    foreach (Disposable obj in monitors)
-                        if (obj != null)
-                            this.monitors.AddUnique(obj);
-                }
+                        foreach (Disposable obj in monitors)
+                            if (obj != null)
+                                this.monitors.AddUnique(obj);
+                    }
             }
 
             public void RemoveMonitors(params Disposable[] monitors)
             {
-                if (monitoring)
-                    foreach (Disposable obj in monitors)
-                        this.monitors.Remove(obj);
+                if (parent.monitoring)
+                    lock (this.monitors)
+                        foreach (Disposable obj in monitors)
+                            this.monitors.Remove(obj);
             }
 
             public static implicit operator AssetType(Entry obj)
