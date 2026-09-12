@@ -44,7 +44,8 @@ namespace ChaosFramework.IO.Containers
 
             public delegate void KillProcedure(AssetType content);
 
-            public static Entry Mock(LoadProcedure load, KillProcedure kill) => new Entry(new LoadKillPair(load, kill));
+            public static Entry Mock(LoadProcedure load, KillProcedure kill)
+                => new Entry(new LoadKillPair(load, kill));
 
             readonly AssetContainer<AssetType> parent;
             public readonly Key key;
@@ -74,7 +75,7 @@ namespace ChaosFramework.IO.Containers
                 this.loadKill = loadKill;
                 Load();
 
-                if (parent.monitoring)
+                if (parent?.monitoring ?? false)
                 {
                     if (monitor1 == null)
                         throw new System.ArgumentNullException(nameof(monitor1));
@@ -142,7 +143,7 @@ namespace ChaosFramework.IO.Containers
                 if (monitor1 == null)
                     throw new System.ArgumentNullException(nameof(monitor1));
 
-                if (parent.monitoring)
+                if (parent?.monitoring ?? false)
                     lock (this.monitors)
                     {
                         this.monitors.AddUnique(monitor1);
@@ -155,7 +156,7 @@ namespace ChaosFramework.IO.Containers
 
             public void RemoveMonitors(params Disposable[] monitors)
             {
-                if (parent.monitoring)
+                if (parent?.monitoring ?? false)
                     lock (this.monitors)
                         foreach (Disposable obj in monitors)
                             this.monitors.Remove(obj);
