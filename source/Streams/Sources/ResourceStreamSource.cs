@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Resources;
+using System.Text.RegularExpressions;
 
 namespace ChaosFramework.IO.Streams.Sources
 {
@@ -31,11 +32,11 @@ namespace ChaosFramework.IO.Streams.Sources
                select ResourceNameToKey((string)resource.Key);
 
         bool StreamSource.ContainsKey(string key)
-            => this.EnumerateKeys(key).NotEmpty();
+            => this.EnumerateKeys(Regex.Escape(key)).NotEmpty();
 
         Stream StreamSource.OpenRead(string key)
         {
-            IEnumerable<string> keys = this.EnumerateKeys(key);
+            IEnumerable<string> keys = this.EnumerateKeys(Regex.Escape(key));
             string keyWithCorrectCapitalization = keys.FirstOrDefault();
             if (keyWithCorrectCapitalization == null)
                 throw new KeyNotFoundException(key);
