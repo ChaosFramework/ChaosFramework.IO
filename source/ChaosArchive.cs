@@ -166,35 +166,35 @@ namespace ChaosFramework.IO
             }
         }
 
-        public LinkedList<string> GetFilesCached(string glob = GlobRegex.MATCH_ALL_GLOB)
+        public LinkedList<string> GetFilesCached(string regex = ".*")
         {
             LinkedList<string> files;
-            if (!cachedFileSearches.TryGetValue(glob, out files))
-                cachedFileSearches[glob] = files = GetFiles(glob);
+            if (!cachedFileSearches.TryGetValue(regex, out files))
+                cachedFileSearches[regex] = files = GetFiles(regex);
             return files;
         }
 
-        public LinkedList<string> GetFiles(string glob = GlobRegex.MATCH_ALL_GLOB)
+        public LinkedList<string> GetFiles(string regex = ".*")
         {
             AssertAlive();
-            Regex regex = new Regex(GlobRegex.ConvertGlobToRegex(glob), RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            Regex r = new Regex(regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
             LinkedList<string> files = new LinkedList<string>();
             foreach (string file in filePos.Keys)
-                if (regex.IsMatch(file))
+                if (r.IsMatch(file))
                     files.AddUnique(file);
 
             return files;
         }
 
-        public LinkedList<string> GetFiles(string[] fileExtensions, string glob = GlobRegex.MATCH_ALL_GLOB)
+        public LinkedList<string> GetFiles(string[] fileExtensions, string regex = ".*")
         {
             AssertAlive();
             for (int i = 0; i < fileExtensions.Length; i++)
                 fileExtensions[i] = fileExtensions[i].ToLower();
 
             LinkedList<string> files = new LinkedList<string>();
-            foreach (string file in GetFiles(glob))
+            foreach (string file in GetFiles(regex))
                 foreach (string ext in fileExtensions)
                     if (file.EndsWith(ext))
                     {
@@ -214,14 +214,14 @@ namespace ChaosFramework.IO
 
         public SysCol.IEnumerable<string> EnumerateFiles(
             string[] fileExtensions,
-            string glob = GlobRegex.MATCH_ALL_GLOB
+            string regex = ".*"
             )
         {
             AssertAlive();
             for (int i = 0; i < fileExtensions.Length; i++)
                 fileExtensions[i] = fileExtensions[i].ToLower();
 
-            foreach (string file in this.EnumerateKeys(glob))
+            foreach (string file in this.EnumerateKeys(regex))
                 foreach (string ext in fileExtensions)
                     if (file.EndsWith(ext))
                         yield return file;

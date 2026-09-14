@@ -9,7 +9,7 @@ namespace ChaosFramework.IO.Containers
 
             protected internal Key(string key)
             {
-                this.key = ChaosUtil.Platform.Paths.Normalization.NormalizeRelative(key);
+                this.key = key;
             }
 
             public static bool operator ==(Key a, Key b)
