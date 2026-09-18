@@ -81,9 +81,9 @@ namespace ChaosFramework.IO.Containers
             _defaultGenerator = defaultGenerator;
             this.streamSource = streamSource;
             this.backgroundLoading = backgroundLoading;
-            defaultValue = Entry.Mock(GenerateDefault, DisposeDefault);
             if (monitoring)
                 monitoringWorker = new MonitoringWorker(this);
+            defaultValue = Entry.Mock(GenerateDefault, DisposeDefault);
         }
 
         public bool ContainsKey(Key key) => entries.ContainsKey(key);
